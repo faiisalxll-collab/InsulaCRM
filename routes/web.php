@@ -15,6 +15,7 @@ use App\Http\Controllers\ListController;
 use App\Http\Controllers\PluginController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\PropertyRequestController;
+use App\Http\Controllers\PropertyMatchController;
 use App\Http\Controllers\SequenceController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\InstallController;
@@ -167,6 +168,8 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
     Route::middleware(['role:admin,agent,listing_agent,buyers_agent', 'mode:realestate'])->group(function () {
         Route::post('/property-requests/{propertyRequest}/refresh', [PropertyRequestController::class, 'refresh'])
             ->name('property-requests.refresh');
+        Route::get('/property-matches', [PropertyMatchController::class, 'index'])
+            ->name('property-matches.index');
         Route::resource('property-requests', PropertyRequestController::class)
             ->parameters(['property-requests' => 'propertyRequest']);
     });
