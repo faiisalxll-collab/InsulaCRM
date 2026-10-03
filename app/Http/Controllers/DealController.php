@@ -352,7 +352,7 @@ class DealController extends Controller
     {
         $this->authorize('export', Deal::class);
 
-        $query = Deal::with(['lead', 'agent']);
+        $query = Deal::with(['lead', 'property', 'propertyRequest.lead', 'agent']);
 
         if (auth()->user()->isAgent()) {
             $query->where('agent_id', auth()->id());
@@ -364,29 +364,88 @@ class DealController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
+
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhereHas('lead', function ($lq) use ($search) {
-                      $lq->where(function ($inner) use ($search) {
-                          $inner->where('first_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%");
-                      });
-                  });
+                $q->where('title', 'like', "%{$search}%");
+
+                if (\App\Services\BusinessModeService::isRealEstate()) {
+                    $q->orWhereHas('property', function ($propertyQuery) use ($search) {
+                        $propertyQuery
+                            ->where('address', 'like', "%{$search}%")
+                            ->orWhere('city', 'like', "%{$search}%")
+                            ->orWhere('district', 'like', "%{$search}%");
+                    })->orWhereHas('propertyRequest.lead', function ($clientQuery) use ($search) {
+                        $clientQuery->where(function ($inner) use ($search) {
+                            $inner->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%");
+                        });
+                    });
+
+                    return;
+                }
+
+                $q->orWhereHas('lead', function ($leadQuery) use ($search) {
+                    $leadQuery->where(function ($inner) use ($search) {
+                        $inner->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+                });
             });
         }
 
         return response()->streamDownload(function () use ($query) {
             $handle = fopen('php://output', 'w');
-            $terms = \App\Services\BusinessModeService::getTerminology();
-            $feeColumn = \App\Services\BusinessModeService::getDashboardKpiConfig()['fee_column'];
-            fputcsv($handle, [
-                __('Title'), __('Lead Name'), __('Stage'), __('Contract Price'),
-                $terms['money_label'], __('Agent'), __('Days in Stage'), __('Created Date'),
-            ]);
-            foreach ($query->with(['lead', 'agent'])->latest()->cursor() as $deal) {
+            $isRealEstate = \App\Services\BusinessModeService::isRealEstate();
+
+            if ($isRealEstate) {
+                fputcsv($handle, [
+                    'الصفقة',
+                    'العميل',
+                    'المالك',
+                    'العقار',
+                    'العملية',
+                    'المرحلة',
+                    'قيمة الاتفاق',
+                    'إجمالي العمولة',
+                    'حالة العمولة',
+                    'الوسيط',
+                    'أيام في المرحلة',
+                    'تاريخ الإنشاء',
+                ]);
+            } else {
+                $terms = \App\Services\BusinessModeService::getTerminology();
+                fputcsv($handle, [
+                    __('Title'), __('Lead Name'), __('Stage'), __('Contract Price'),
+                    $terms['money_label'], __('Agent'), __('Days in Stage'), __('Created Date'),
+                ]);
+            }
+
+            foreach ($query->latest()->cursor() as $deal) {
                 $daysInStage = $deal->stage_changed_at
                     ? (int) now()->diffInDays($deal->stage_changed_at, true)
                     : '';
+
+                if ($isRealEstate) {
+                    fputcsv($handle, [
+                        $deal->title,
+                        $deal->propertyRequest?->lead?->full_name ?? '',
+                        $deal->lead?->full_name ?? '',
+                        $deal->property?->address ?? '',
+                        $deal->property?->transaction_type === 'rent' ? 'إيجار' : 'بيع',
+                        Deal::stageLabel($deal->stage),
+                        $deal->contract_price,
+                        $deal->total_commission,
+                        $deal->commission_status,
+                        $deal->agent?->name ?? '',
+                        $daysInStage,
+                        $deal->created_at?->format('Y-m-d'),
+                    ]);
+
+                    continue;
+                }
+
+                $feeColumn = \App\Services\BusinessModeService::getDashboardKpiConfig()['fee_column'];
                 fputcsv($handle, [
                     $deal->title,
                     $deal->lead ? $deal->lead->first_name . ' ' . $deal->lead->last_name : '',
@@ -398,6 +457,7 @@ class DealController extends Controller
                     $deal->created_at?->format('Y-m-d'),
                 ]);
             }
+
             fclose($handle);
         }, 'deals-export-' . now()->format('Y-m-d') . '.csv', [
             'Content-Type' => 'text/csv; charset=UTF-8',
