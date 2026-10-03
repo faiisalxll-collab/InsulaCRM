@@ -720,7 +720,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>
                     {{ __('New Lead') }}
                 </a>
-                @if(auth()->user()->canManageBuyers())
+                @if(($businessMode ?? 'wholesale') !== 'realestate' && auth()->user()->canManageBuyers())
                 <a class="dropdown-item" href="{{ route('buyers.create') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 7v5l3 3"/></svg>
                     {{ __('New') }} {{ $modeTerms['buyer_singular'] ?? __('Buyer') }}
