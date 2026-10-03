@@ -85,6 +85,7 @@ Complete one full transaction without manually editing database records.
 - [ ] Confirm the owner can hold more than one property without overwriting the first.
 - [ ] Create a separate searching client.
 - [ ] Create a sale or rental request.
+- [ ] Use global search to find the client, property and property request by normal office terms such as name, phone, district or address.
 
 ### B. Matching
 
@@ -160,10 +161,11 @@ With two broker accounts:
 1. Broker A creates a client, property/request and transaction.
 2. Broker B attempts normal navigation to A's private records.
 3. Broker B attempts direct known IDs.
-4. Broker B attempts crafted form submissions.
-5. Broker B attempts bulk reassignment.
+4. Broker B searches for Broker A's client, property and request using known names/addresses and confirms private results do not appear.
+5. Broker B attempts crafted form submissions.
+6. Broker B attempts bulk reassignment.
 
-The pilot fails if Broker B can read or mutate Broker A's protected records outside the intended office permissions.
+The pilot fails if Broker B can read, search, or mutate Broker A's protected records outside the intended office permissions.
 
 ## 9. What to observe in the office
 
@@ -183,13 +185,14 @@ These observations, not feature brainstorming, define V2 priorities.
 Pause the pilot and investigate before adding more live records if any of these happen:
 
 - tenant data appears in another tenant
-- broker ownership is bypassed
+- broker ownership is bypassed, including through global search
 - a migration fails
 - photos disappear from persistent storage
 - property/request/deal relationships point to the wrong client
 - accepting an offer does not pause inventory/request state correctly
 - closing a deal produces the wrong sold/leased/commission state
 - transaction history can be deleted after showing/negotiation activity
+- a Saudi V1 user is routed into legacy Buyer, Disposition, ARV/CMA, Investor Packet, or wholesale document-generation workflows
 
 ## 11. Rollback principle
 
