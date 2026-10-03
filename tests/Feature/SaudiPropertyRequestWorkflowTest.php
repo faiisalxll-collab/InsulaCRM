@@ -142,8 +142,7 @@ class SaudiPropertyRequestWorkflowTest extends TestCase
             'agent_id' => $agentA->id,
             'transaction_type' => 'sale',
             'property_type' => 'villa',
-            'city' => 'الرياض',
-            'notes' => 'OWN-REQUEST-MARKER',
+            'city' => 'OWN-CITY-MARKER',
             'status' => 'active',
         ]);
 
@@ -152,15 +151,14 @@ class SaudiPropertyRequestWorkflowTest extends TestCase
             'agent_id' => $agentB->id,
             'transaction_type' => 'rent',
             'property_type' => 'apartment',
-            'city' => 'جدة',
-            'notes' => 'OTHER-REQUEST-MARKER',
+            'city' => 'OTHER-CITY-MARKER',
             'status' => 'active',
         ]);
 
         $this->actingAs($agentA)
             ->get(route('property-requests.index'))
             ->assertOk()
-            ->assertSee('OWN-REQUEST-MARKER', false)
-            ->assertDontSee('OTHER-REQUEST-MARKER', false);
+            ->assertSee('OWN-CITY-MARKER', false)
+            ->assertDontSee('OTHER-CITY-MARKER', false);
     }
 }
