@@ -504,4 +504,110 @@ class SaudiDealWorkflowTest extends TestCase
             ->assertJsonPath('property_request.lead.id', $client->id);
     }
 
+
+    public function test_pipeline_search_finds_deal_by_directly_linked_property(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+        $client = $this->createLead(['first_name' => 'عميل', 'last_name' => 'البحث']);
+
+        $targetProperty = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار شارع الصحراء المميز',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $otherProperty = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار مختلف تمامًا',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $request = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $targetProperty->id,
+            'property_request_id' => $request->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'TARGET-DEAL-MARKER',
+            'stage' => 'offer_received',
+        ]);
+
+        Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $otherProperty->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'OTHER-DEAL-MARKER',
+            'stage' => 'offer_received',
+        ]);
+
+        $this->get(route('pipeline', ['search' => 'شارع الصحراء']))
+            ->assertOk()
+            ->assertSee('TARGET-DEAL-MARKER')
+            ->assertDontSee('OTHER-DEAL-MARKER');
+    }
+
+    public function test_saudi_deal_page_title_uses_request_client(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead(['first_name' => 'مالك', 'last_name' => 'العقار']);
+        $client = $this->createLead(['first_name' => 'خالد', 'last_name' => 'المشتري']);
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار عنوان الصفقة',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $request = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        $deal = Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $property->id,
+            'property_request_id' => $request->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة عنوان',
+            'stage' => 'offer_received',
+        ]);
+
+        $this->get(route('deals.show', $deal))
+            ->assertOk()
+            ->assertSee('صفقة: خالد المشتري')
+            ->assertSee('مالك العقار');
+    }
+
 }
