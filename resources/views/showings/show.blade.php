@@ -10,7 +10,17 @@
         <div class="card mb-3">
             <div class="card-header">
                 <h3 class="card-title">{{ __('Showing Information') }}</h3>
-                <div class="card-actions">
+                <div class="card-actions d-flex gap-2">
+                    @if(($businessMode ?? 'wholesale') === 'realestate' && $showing->propertyRequest && $showing->property)
+                        @if($showing->deal)
+                            <a href="{{ route('deals.show', $showing->deal) }}" class="btn btn-sm btn-success">فتح الصفقة</a>
+                        @else
+                            <form method="POST" action="{{ route('showings.startDeal', $showing) }}">
+                                @csrf
+                                <button class="btn btn-sm btn-primary">بدء التفاوض</button>
+                            </form>
+                        @endif
+                    @endif
                     <a href="{{ route('showings.edit', $showing) }}" class="btn btn-sm btn-outline-primary">{{ __('Edit') }}</a>
                     <form method="POST" action="{{ route('showings.destroy', $showing) }}" class="d-inline" onsubmit="return confirm('{{ __('Delete this showing?') }}')">
                         @csrf @method('DELETE')
@@ -25,7 +35,7 @@
                         <div class="datagrid-content">
                             @if($showing->property)
                                 <a href="{{ route('properties.show', $showing->property) }}">{{ $showing->property->address }}</a>
-                                <div class="text-muted small">{{ $showing->property->city }}, {{ $showing->property->state }} {{ $showing->property->zip_code }}</div>
+                                <div class="text-muted small">{{ $showing->property->district ? $showing->property->district.'، ' : '' }}{{ $showing->property->city }}</div>
                             @else
                                 <span class="text-muted">-</span>
                             @endif
