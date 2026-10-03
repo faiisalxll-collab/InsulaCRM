@@ -315,4 +315,29 @@ class SaudiPropertyManagementTest extends TestCase
         );
     }
 
+
+    public function test_saudi_property_requires_an_owner(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $this->from(route('properties.create'))
+            ->post(route('properties.manage.store'), [
+                'address' => 'عقار بلا مالك',
+                'city' => 'الرياض',
+                'property_type' => 'villa',
+                'transaction_type' => 'sale',
+                'district' => 'نمار',
+                'area_sqm' => 300,
+                'list_price' => 1500000,
+                'listing_status' => 'active',
+            ])
+            ->assertRedirect(route('properties.create'))
+            ->assertSessionHasErrors('lead_id');
+
+        $this->assertDatabaseMissing('properties', [
+            'tenant_id' => $this->tenant->id,
+            'address' => 'عقار بلا مالك',
+        ]);
+    }
+
 }
