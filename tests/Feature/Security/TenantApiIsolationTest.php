@@ -147,6 +147,49 @@ class TenantApiIsolationTest extends TestCase
     }
 
 
+    public function test_saudi_realestate_property_api_accepts_local_fields_without_state_or_zip(): void
+    {
+        $this->officeA->update(['business_mode' => 'realestate']);
+        $lead = $this->makeLead($this->officeA, 'Saudi', 'Owner');
+
+        $response = $this->postJson('/api/v1/properties', [
+            'lead_id' => $lead->id,
+            'address' => 'شارع اختبار',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'district' => 'نمار',
+            'plan_number' => '1234',
+            'area_sqm' => 400,
+            'street_width_m' => 20,
+            'floors' => 2,
+            'units' => 1,
+            'furnished' => false,
+            'finance_eligible' => true,
+            'list_price' => 2000000,
+            'listing_status' => 'active',
+        ], $this->headersFor($this->officeA))
+            ->assertCreated();
+
+        $propertyId = $response->json('property_id');
+
+        $this->assertDatabaseHas('properties', [
+            'id' => $propertyId,
+            'tenant_id' => $this->officeA->id,
+            'lead_id' => $lead->id,
+            'city' => 'الرياض',
+            'district' => 'نمار',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'finance_eligible' => true,
+        ]);
+
+        $property = Property::withoutGlobalScopes()->findOrFail($propertyId);
+        $this->assertNull($property->state);
+        $this->assertNull($property->zip_code);
+        $this->assertSame('5000.00', $property->price_per_sqm);
+    }
+
     public function test_office_a_cannot_read_office_b_buyer_by_id(): void
     {
         $buyer = Buyer::withoutGlobalScopes()->create([
