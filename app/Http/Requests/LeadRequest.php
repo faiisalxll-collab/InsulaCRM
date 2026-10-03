@@ -19,8 +19,19 @@ class LeadRequest extends FormRequest
         $leadSources = implode(',', CustomFieldService::getValidSlugs('lead_source'));
         $leadStatuses = implode(',', CustomFieldService::getValidSlugs('lead_status'));
 
+        $user = $this->user();
+
         $rules = [
-            'agent_id' => ['required', Rule::exists('users', 'id')->where('tenant_id', auth()->user()->tenant_id)],
+            'agent_id' => [
+                'required',
+                Rule::exists('users', 'id')->where(function ($query) use ($user) {
+                    $query->where('tenant_id', $user->tenant_id);
+
+                    if (! $user->isAdmin()) {
+                        $query->where('id', $user->id);
+                    }
+                }),
+            ],
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
