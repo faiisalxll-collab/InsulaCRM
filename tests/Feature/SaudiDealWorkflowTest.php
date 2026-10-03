@@ -239,6 +239,11 @@ class SaudiDealWorkflowTest extends TestCase
         $this->assertSame('1750000.00', $deal->fresh()->contract_price);
         $this->assertSame('pending', $property->fresh()->listing_status);
         $this->assertSame('paused', $propertyRequest->fresh()->status);
+        $this->assertSame(9, $deal->checklistItems()->count());
+        $this->assertDatabaseHas('transaction_checklists', [
+            'deal_id' => $deal->id,
+            'item_key' => 'ownership_verification',
+        ]);
     }
 
     public function test_closing_sale_marks_property_sold_request_fulfilled_and_commission_due(): void
