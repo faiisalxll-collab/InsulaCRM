@@ -76,12 +76,10 @@ class BusinessModeServiceTest extends TestCase
     {
         $types = BusinessModeService::getFinancingTypes();
 
-        $this->assertCount(5, $types);
-        $this->assertArrayHasKey('cash', $types);
-        $this->assertArrayHasKey('conventional', $types);
-        $this->assertArrayHasKey('fha', $types);
-        $this->assertArrayHasKey('va', $types);
-        $this->assertArrayHasKey('other', $types);
+        $this->assertCount(3, $types);
+        $this->assertSame('نقدي', $types['cash']);
+        $this->assertSame('تمويل بنكي', $types['bank_finance']);
+        $this->assertSame('أخرى', $types['other']);
     }
 
     public function test_get_default_checklist_items(): void
