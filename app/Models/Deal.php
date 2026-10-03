@@ -70,6 +70,8 @@ class Deal extends Model
         'buyer_commission_pct',
         'total_commission',
         'brokerage_split_pct',
+        'commission_status',
+        'commission_paid_at',
         'mls_number',
         'listing_date',
         'days_on_market',
@@ -89,6 +91,7 @@ class Deal extends Model
             'buyer_commission_pct' => 'decimal:2',
             'total_commission' => 'decimal:2',
             'brokerage_split_pct' => 'decimal:2',
+            'commission_paid_at' => 'datetime',
             'listing_date' => 'date',
             'stage_changed_at' => 'datetime',
         ];
@@ -163,6 +166,24 @@ class Deal extends Model
     public function offers()
     {
         return $this->hasMany(DealOffer::class);
+    }
+
+    public function getOfficeCommissionAmountAttribute(): ?float
+    {
+        if ($this->total_commission === null || $this->brokerage_split_pct === null) {
+            return null;
+        }
+
+        return round((float) $this->total_commission * (float) $this->brokerage_split_pct / 100, 2);
+    }
+
+    public function getAgentCommissionAmountAttribute(): ?float
+    {
+        if ($this->total_commission === null) {
+            return null;
+        }
+
+        return round((float) $this->total_commission - (float) ($this->office_commission_amount ?? 0), 2);
     }
 
     public function getDueDiligenceDaysRemainingAttribute(): ?int
