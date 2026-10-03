@@ -217,7 +217,7 @@
                     @endif
                 </div>
 
-                @if($deal->stage === 'under_contract' && $deal->due_diligence_end_date)
+                @if(($businessMode ?? 'wholesale') === 'wholesale' && $deal->stage === 'under_contract' && $deal->due_diligence_end_date)
                 <div class="mt-3">
                     <div class="alert {{ $deal->is_due_diligence_urgent ? 'alert-danger' : 'alert-info' }}">
                         <strong>{{ __('Due Diligence:') }}</strong>
@@ -551,7 +551,7 @@
             <div class="card-body">
                 <form id="deal-edit-form">
                     <div class="mb-2">
-                        <label class="form-label">{{ __('Contract Price ($)') }}</label>
+                        <label class="form-label">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'قيمة الاتفاق (ر.س)' : __('Contract Price ($)') }}</label>
                         <input type="number" name="contract_price" class="form-control form-control-sm" step="0.01" value="{{ $deal->contract_price }}">
                     </div>
                     @if($businessMode === 'wholesale')
@@ -569,35 +569,27 @@
                     </div>
                     @else
                     <div class="mb-2">
-                        <label class="form-label">{{ __('Listing Commission (%)') }}</label>
-                        <input type="number" name="listing_commission_pct" class="form-control form-control-sm" step="0.01" min="0" max="100" value="{{ $deal->listing_commission_pct }}">
+                        <label class="form-label">إجمالي العمولة (ر.س)</label>
+                        <input type="number" name="total_commission" class="form-control form-control-sm" step="0.01" min="0" value="{{ $deal->total_commission }}">
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">{{ __('Buyer Commission (%)') }}</label>
-                        <input type="number" name="buyer_commission_pct" class="form-control form-control-sm" step="0.01" min="0" max="100" value="{{ $deal->buyer_commission_pct }}">
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">{{ __('Total Commission ($)') }}</label>
-                        <input type="number" name="total_commission" class="form-control form-control-sm" step="0.01" value="{{ $deal->total_commission }}">
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">{{ __('MLS #') }}</label>
-                        <input type="text" name="mls_number" class="form-control form-control-sm" maxlength="30" value="{{ $deal->mls_number }}">
+                        <label class="form-label">حصة المكتب من العمولة (%)</label>
+                        <input type="number" name="brokerage_split_pct" class="form-control form-control-sm" step="0.01" min="0" max="100" value="{{ $deal->brokerage_split_pct }}">
                     </div>
                     @endif
                     <div class="mb-2">
-                        <label class="form-label">{{ __('Contract Date') }}</label>
+                        <label class="form-label">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تاريخ الاتفاق' : __('Contract Date') }}</label>
                         <input type="date" name="contract_date" class="form-control form-control-sm" value="{{ $deal->contract_date ? $deal->contract_date->format('Y-m-d') : '' }}">
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">{{ __('Closing Date') }}</label>
+                        <label class="form-label">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تاريخ الإغلاق' : __('Closing Date') }}</label>
                         <input type="date" name="closing_date" class="form-control form-control-sm" value="{{ $deal->closing_date ? $deal->closing_date->format('Y-m-d') : '' }}">
                     </div>
                     <div class="mb-2">
                         <label class="form-label">{{ __('Notes') }}</label>
                         <textarea name="notes" class="form-control form-control-sm" rows="3">{{ $deal->notes }}</textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 btn-sm">{{ __('Save Changes') }}</button>
+                    <button type="submit" class="btn btn-primary w-100 btn-sm">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'حفظ التعديلات' : __('Save Changes') }}</button>
                 </form>
             </div>
         </div>
@@ -693,7 +685,14 @@ if (window.trackRecentlyViewed) {
     var briefingLinks = document.getElementById('deal-briefing-links');
     if (!briefingText) return;
     var csrfTkn = document.querySelector('meta[name="csrf-token"]').content;
-    var fmtCur = function(v) { return v ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v) : ''; };
+    var fmtCur = function(v) {
+        if (!v) return '';
+        return new Intl.NumberFormat('{{ Fmt::jsLocale() }}', {
+            style: 'currency',
+            currency: '{{ Fmt::currencyCode() }}',
+            maximumFractionDigits: 0
+        }).format(v);
+    };
 
     var typeLabels = { deal: '{{ ($businessMode ?? "wholesale") === "realestate" ? __("Transaction") : __("Deal") }}', lead: '{{ __("Lead") }}', buyer: '{{ ($businessMode ?? "wholesale") === "realestate" ? __("Client") : __("Buyer") }}', property: '{{ __("Property") }}' };
     var typeColors = { deal: 'bg-blue-lt', lead: 'bg-green-lt', buyer: 'bg-orange-lt', property: 'bg-cyan-lt' };
