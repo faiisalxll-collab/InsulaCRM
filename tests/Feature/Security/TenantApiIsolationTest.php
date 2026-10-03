@@ -24,8 +24,10 @@ class TenantApiIsolationTest extends TestCase
 
     public function test_office_a_cannot_read_office_b_property_by_id(): void
     {
+        $leadB = $this->makeLead($this->officeB, 'Read', 'Target');
         $property = Property::withoutGlobalScopes()->create([
             'tenant_id' => $this->officeB->id,
+            'lead_id' => $leadB->id,
             'address' => 'Office B Property',
         ]);
 
@@ -35,12 +37,17 @@ class TenantApiIsolationTest extends TestCase
 
     public function test_property_index_contains_only_current_office_records(): void
     {
+        $leadA = $this->makeLead($this->officeA, 'Visible', 'Lead');
+        $leadB = $this->makeLead($this->officeB, 'Secret', 'Lead');
+
         Property::withoutGlobalScopes()->create([
             'tenant_id' => $this->officeA->id,
+            'lead_id' => $leadA->id,
             'address' => 'Office A Property',
         ]);
         Property::withoutGlobalScopes()->create([
             'tenant_id' => $this->officeB->id,
+            'lead_id' => $leadB->id,
             'address' => 'Office B Property',
         ]);
 
@@ -53,8 +60,10 @@ class TenantApiIsolationTest extends TestCase
 
     public function test_office_a_cannot_update_office_b_property(): void
     {
+        $leadB = $this->makeLead($this->officeB, 'Update', 'Target');
         $property = Property::withoutGlobalScopes()->create([
             'tenant_id' => $this->officeB->id,
+            'lead_id' => $leadB->id,
             'address' => 'Office B Original',
         ]);
 
@@ -117,6 +126,16 @@ class TenantApiIsolationTest extends TestCase
         $this->assertDatabaseMissing('properties', [
             'tenant_id' => $this->officeA->id,
             'lead_id' => $lead->id,
+        ]);
+    }
+
+    private function makeLead(Tenant $tenant, string $firstName, string $lastName): Lead
+    {
+        return Lead::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'status' => 'new',
         ]);
     }
 
