@@ -41,3 +41,5 @@ jobs:
 
       - name: Run full test suite
         run: php artisan test
+
+# security baseline revision: buyers-activities
