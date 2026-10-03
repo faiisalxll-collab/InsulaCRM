@@ -16,9 +16,9 @@
 
 <div class="row g-3">
     <div class="col-md-6">
-        <label class="form-label">العميل</label>
-        <select name="lead_id" class="form-select @error('lead_id') is-invalid @enderror">
-            <option value="">بدون عميل مرتبط</option>
+        <label class="form-label required">العميل</label>
+        <select name="lead_id" class="form-select @error('lead_id') is-invalid @enderror" required>
+            <option value="">اختر العميل</option>
             @foreach($leads as $lead)
                 <option value="{{ $lead->id }}" @selected((string) old('lead_id', $propertyRequest->lead_id ?? request('lead_id', '')) === (string) $lead->id)>
                     {{ $lead->first_name }} {{ $lead->last_name }}{{ $lead->phone ? ' — '.$lead->phone : '' }}
