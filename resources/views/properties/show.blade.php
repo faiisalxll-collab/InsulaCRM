@@ -165,11 +165,11 @@
                 @php
                     $listingStatusLabels = [
                         'active' => 'نشط', 'pending' => 'معلّق', 'sold' => 'مباع',
-                        'withdrawn' => 'مسحوب', 'expired' => 'منتهي',
+                        'leased' => 'مؤجر', 'withdrawn' => 'مسحوب', 'expired' => 'منتهي',
                     ];
                     $listingStatusColors = [
                         'active' => 'bg-green-lt', 'pending' => 'bg-yellow-lt', 'sold' => 'bg-purple-lt',
-                        'withdrawn' => 'bg-red-lt', 'expired' => 'bg-secondary-lt',
+                        'leased' => 'bg-purple-lt', 'withdrawn' => 'bg-red-lt', 'expired' => 'bg-secondary-lt',
                     ];
                 @endphp
                 <div class="mb-2 d-flex justify-content-between gap-3">
@@ -227,6 +227,10 @@
         </div>
     </div>
 </div>
+
+@if(($businessMode ?? 'wholesale') === 'realestate')
+    @include('properties._photos', ['property' => $property])
+@endif
 
 {{-- ARV / CMA Worksheet --}}
 @if($businessMode === 'wholesale')
