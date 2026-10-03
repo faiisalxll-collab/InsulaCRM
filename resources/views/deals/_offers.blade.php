@@ -63,9 +63,9 @@
                             <label class="form-label">طريقة الشراء</label>
                             <select name="financing_type" class="form-select form-select-sm">
                                 <option value="">غير محدد</option>
-                                <option value="cash">نقدي</option>
-                                <option value="bank_finance">تمويل بنكي</option>
-                                <option value="other">أخرى</option>
+                                @foreach(\App\Models\DealOffer::SAUDI_FINANCING_TYPES as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
                             </select>
                         </div>
 
