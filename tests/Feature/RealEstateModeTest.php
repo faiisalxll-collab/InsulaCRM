@@ -14,8 +14,9 @@ class RealEstateModeTest extends TestCase
 
         $response = $this->get('/pipeline');
         $response->assertStatus(200);
-        $response->assertSee('Listing Agreement');
-        $response->assertSee('Active Listing');
+        $response->assertSee('اتفاقية تسويق');
+        $response->assertSee('عقار نشط');
+        $response->assertSee('تفاوض');
     }
 
     public function test_wholesale_tenant_gets_wholesale_pipeline_stages(): void
@@ -101,7 +102,7 @@ class RealEstateModeTest extends TestCase
 
         $response = $this->get("/pipeline/{$deal->id}");
         $response->assertStatus(200);
-        $response->assertSee('Commission Calculator');
+        $response->assertSee('العمولة');
     }
 
     public function test_realestate_deal_shows_transaction_checklist(): void
