@@ -11,7 +11,7 @@ Client → Property / Property Request → Match → Showing → Offer / Negotia
 - [x] Saudi clients can be created, edited, viewed, and assigned to an authorized broker.
 - [x] One client/owner can have multiple properties.
 - [x] One client can have multiple property requests.
-- [x] Saudi properties support sale/rent, district, plan, area, price, frontage, street width, age, floors, units, furnishing, finance eligibility, coordinates, and photos.
+- [x] Saudi properties support sale/rent, district, plan, area, price, facing direction, street width, age, floors, units, furnishing, finance eligibility, coordinates, and photos.
 - [x] Property photo upload/delete is tenant-scoped and removes stored files when the property is deleted.
 - [x] Requests support sale/rent criteria and are broker-scoped.
 - [x] Matching is deterministic, explainable, tenant-scoped, and reverse-refreshes on property/request changes.
