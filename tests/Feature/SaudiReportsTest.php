@@ -8,6 +8,9 @@ use App\Models\Property;
 use App\Models\PropertyMatch;
 use App\Models\PropertyRequest;
 use App\Models\Showing;
+use App\Models\Role;
+use App\Models\Tenant;
+use App\Models\User;
 use Tests\TestCase;
 
 class SaudiReportsTest extends TestCase
@@ -139,8 +142,26 @@ class SaudiReportsTest extends TestCase
     {
         $this->actingAsAdmin($this->realEstateTenant());
 
-        $other = $this->createOtherTenant();
-        $otherAgent = $this->createUserForTenant($other, 'agent');
+        $other = Tenant::create([
+            'name' => 'Other Company',
+            'slug' => 'other-company',
+            'email' => 'other-admin@test.com',
+            'status' => 'active',
+            'timezone' => 'Asia/Riyadh',
+            'currency' => 'SAR',
+            'date_format' => 'Y-m-d',
+            'country' => 'SA',
+            'measurement_system' => 'metric',
+            'locale' => 'ar',
+            'distribution_method' => 'round_robin',
+            'business_mode' => 'realestate',
+        ]);
+
+        $otherAgent = User::factory()->create([
+            'tenant_id' => $other->id,
+            'role_id' => Role::where('name', 'agent')->firstOrFail()->id,
+            'is_active' => true,
+        ]);
 
         $this->get(route('reports.index', [
             'agent_id' => $otherAgent->id,
