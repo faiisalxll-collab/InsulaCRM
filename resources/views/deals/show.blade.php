@@ -303,10 +303,12 @@
             <div class="card-header">
                 <h3 class="card-title">{{ __('Documents') }}</h3>
                 <div class="card-actions">
+                    @if(($businessMode ?? 'wholesale') === 'wholesale')
                     <a href="{{ route('documents.generate', $deal) }}" class="btn btn-sm btn-outline-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M12 11v6"/><path d="M9 14l3 -3l3 3"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 2 2z"/><path d="M12 11v6"/><path d="M9 14l3 -3l3 3"/></svg>
                         {{ __('Generate Document') }}
                     </a>
+                    @endif
                 </div>
             </div>
             <div class="card-body">
