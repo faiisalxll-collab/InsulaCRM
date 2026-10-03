@@ -35,6 +35,7 @@ class BusinessModeServiceTest extends TestCase
         $this->assertArrayHasKey('active_listing', $stages);
         $this->assertArrayHasKey('showing', $stages);
         $this->assertArrayHasKey('offer_received', $stages);
+        $this->assertArrayHasKey('negotiating', $stages);
         $this->assertArrayNotHasKey('prospecting', $stages);
         $this->assertArrayNotHasKey('dispositions', $stages);
     }
@@ -96,9 +97,9 @@ class BusinessModeServiceTest extends TestCase
         $this->assertContains('final_walkthrough', $keys);
     }
 
-    public function test_realestate_stages_constant_has_11_stages(): void
+    public function test_realestate_stages_constant_has_12_stages(): void
     {
-        $this->assertCount(11, BusinessModeService::REALESTATE_STAGES);
+        $this->assertCount(12, BusinessModeService::REALESTATE_STAGES);
     }
 
     public function test_wholesale_stages_constant_has_10_stages(): void
