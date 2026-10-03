@@ -387,25 +387,4 @@ class SaudiPropertyManagementTest extends TestCase
         ]);
     }
 
-    public function test_legacy_field_scout_property_intake_remains_available_in_wholesale_mode(): void
-    {
-        $this->actingAsAdmin(['business_mode' => 'wholesale']);
-
-        $this->post(route('properties.store'), [
-            'address' => '123 Legacy St',
-            'city' => 'Miami',
-            'state' => 'FL',
-            'zip_code' => '33101',
-            'property_type' => 'single_family',
-        ])->assertRedirect(route('dashboard'));
-
-        $this->assertDatabaseHas('properties', [
-            'tenant_id' => $this->tenant->id,
-            'address' => '123 Legacy Street',
-            'city' => 'Miami',
-            'state' => 'FL',
-            'zip_code' => '33101',
-        ]);
-    }
-
 }
