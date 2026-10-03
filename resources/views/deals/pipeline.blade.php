@@ -588,19 +588,19 @@
             let html = `
                 <form id="deal-edit-form" data-deal-id="${deal.id}">
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Stage') }}</label>
-                        <div><span class="badge bg-primary">${deal.stage.replace(/_/g, ' ')}</span></div>
+                        <label class="form-label">{{ $businessMode === 'realestate' ? 'المرحلة' : __('Stage') }}</label>
+                        <div><span class="badge bg-primary">${(_pStageLabels && _pStageLabels[deal.stage]) ? _pStageLabels[deal.stage] : deal.stage.replace(/_/g, ' ')}</span></div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Lead') }}</label>
-                        <div>${deal.lead ? deal.lead.first_name + ' ' + deal.lead.last_name : '-'}</div>
+                        <label class="form-label">{{ $businessMode === 'realestate' ? 'العميل' : __('Lead') }}</label>
+                        <div>@if($businessMode === 'realestate')${deal.property_request && deal.property_request.lead ? deal.property_request.lead.first_name + ' ' + deal.property_request.lead.last_name : '-'}@else${deal.lead ? deal.lead.first_name + ' ' + deal.lead.last_name : '-'}@endif</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Property') }}</label>
-                        <div>${deal.lead && deal.lead.property ? deal.lead.property.address : '-'}</div>
+                        <label class="form-label">{{ $businessMode === 'realestate' ? 'العقار' : __('Property') }}</label>
+                        <div>@if($businessMode === 'realestate')${deal.property ? deal.property.address : '-'}@else${deal.lead && deal.lead.property ? deal.lead.property.address : '-'}@endif</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Agent') }}</label>
+                        <label class="form-label">{{ $businessMode === 'realestate' ? 'الوسيط' : __('Agent') }}</label>
                         <div>${deal.agent ? deal.agent.name : '-'}</div>
                     </div>
                     <div class="mb-3">
@@ -628,11 +628,11 @@
                     @endif
                     <div class="row mb-3">
                         <div class="col-6">
-                            <label class="form-label">{{ __('Contract Date') }}</label>
+                            <label class="form-label">{{ $businessMode === 'realestate' ? 'تاريخ الاتفاق' : __('Contract Date') }}</label>
                             <input type="date" name="contract_date" class="form-control" value="${deal.contract_date ? deal.contract_date.split('T')[0] : ''}">
                         </div>
                         <div class="col-6">
-                            <label class="form-label">{{ __('Closing Date') }}</label>
+                            <label class="form-label">{{ $businessMode === 'realestate' ? 'تاريخ الإغلاق' : __('Closing Date') }}</label>
                             <input type="date" name="closing_date" class="form-control" value="${deal.closing_date ? deal.closing_date.split('T')[0] : ''}">
                         </div>
                     </div>
@@ -644,11 +644,11 @@
                     ${deal.due_diligence_end_date ? `<div class="alert ${deal.is_due_diligence_urgent ? 'alert-danger' : 'alert-info'} mb-3"><strong>{{ __('Due Diligence:') }}</strong> {{ __('Ends') }} ${new Date(deal.due_diligence_end_date).toLocaleDateString()} (${deal.due_diligence_days_remaining ?? '?'} {{ __('days left') }})</div>` : ''}
                     @endif
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Notes') }}</label>
+                        <label class="form-label">{{ $businessMode === 'realestate' ? 'ملاحظات' : __('Notes') }}</label>
                         <textarea name="notes" class="form-control" rows="3">${deal.notes || ''}</textarea>
                     </div>
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-fill" id="panel-save-btn">{{ __('Save Changes') }}</button>
+                        <button type="submit" class="btn btn-primary flex-fill" id="panel-save-btn">{{ $businessMode === 'realestate' ? 'حفظ التعديلات' : __('Save Changes') }}</button>
                         @if(auth()->user()->tenant->ai_enabled)
                         <button type="button" class="btn btn-outline-purple" onclick="aiAnalyzeDeal(${deal.id})" title="{{ __('AI Deal Analysis') }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-sparkles" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/></svg>
