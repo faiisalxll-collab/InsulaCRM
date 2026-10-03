@@ -62,10 +62,13 @@ return new class extends Migration
             $table->unsignedTinyInteger('finance_score')->default(0);
             $table->json('match_reasons')->nullable();
             $table->json('rejection_reasons')->nullable();
+            $table->string('status', 20)->default('eligible');
+            $table->timestamp('matched_at')->nullable();
             $table->timestamp('evaluated_at');
             $table->timestamps();
             $table->unique(['tenant_id', 'property_request_id', 'property_id'], 'property_matches_unique');
             $table->index(['tenant_id', 'match_score']);
+            $table->index(['tenant_id', 'status', 'match_score']);
         });
     }
 
