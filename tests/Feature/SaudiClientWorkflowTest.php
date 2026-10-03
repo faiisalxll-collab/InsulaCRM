@@ -224,4 +224,35 @@ class SaudiClientWorkflowTest extends TestCase
         $this->assertFalse($policy->delete($this->adminUser, $foreignLead));
     }
 
+
+    public function test_linked_saudi_client_cannot_be_deleted(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $lead = $this->createLead([
+            'lead_source' => 'referral',
+            'contact_type' => 'seller_lead',
+        ]);
+
+        Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $lead->id,
+            'address' => 'عقار يحمي العميل من الحذف',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $this->from(route('leads.show', $lead))
+            ->delete(route('leads.destroy', $lead))
+            ->assertRedirect(route('leads.show', $lead))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('leads', [
+            'id' => $lead->id,
+            'deleted_at' => null,
+        ]);
+    }
+
 }
