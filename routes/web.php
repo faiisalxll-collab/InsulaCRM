@@ -322,7 +322,9 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
         Route::patch('/pipeline/{deal}/stage', [DealController::class, 'updateStage'])->name('deals.updateStage');
         Route::post('/pipeline/{deal}/documents', [DealController::class, 'uploadDocument'])->name('deals.uploadDocument');
         Route::get('/pipeline/documents/{document}/download', [DealController::class, 'downloadDocument'])->name('deals.downloadDocument');
-        Route::post('/pipeline/{deal}/notify-buyer/{match}', [DealController::class, 'notifyBuyer'])->name('deals.notifyBuyer');
+        Route::post('/pipeline/{deal}/notify-buyer/{match}', [DealController::class, 'notifyBuyer'])
+            ->middleware('mode:wholesale')
+            ->name('deals.notifyBuyer');
 
         // Transaction Checklist
         Route::post('/pipeline/{deal}/checklist', [DealController::class, 'storeChecklist'])->name('deals.storeChecklist');
@@ -347,16 +349,24 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
         Route::delete('/documents/{document}', [DocumentGeneratorController::class, 'destroy'])->name('documents.destroy');
 
         // Disposition Room (WS mode)
-        Route::get('/disposition/{deal}', [DispositionRoomController::class, 'show'])->name('disposition.show');
-        Route::put('/disposition/{match}/status', [DispositionRoomController::class, 'updateStatus'])->name('disposition.updateStatus');
-        Route::post('/disposition/{deal}/mass-outreach', [DispositionRoomController::class, 'massOutreach'])->name('disposition.massOutreach');
+        Route::get('/disposition/{deal}', [DispositionRoomController::class, 'show'])
+            ->middleware('mode:wholesale')
+            ->name('disposition.show');
+        Route::put('/disposition/{match}/status', [DispositionRoomController::class, 'updateStatus'])
+            ->middleware('mode:wholesale')
+            ->name('disposition.updateStatus');
+        Route::post('/disposition/{deal}/mass-outreach', [DispositionRoomController::class, 'massOutreach'])
+            ->middleware('mode:wholesale')
+            ->name('disposition.massOutreach');
 
         // Investor Packet
-        Route::get('/pipeline/{deal}/investor-packet', [DocumentGeneratorController::class, 'investorPacket'])->name('documents.investorPacket');
+        Route::get('/pipeline/{deal}/investor-packet', [DocumentGeneratorController::class, 'investorPacket'])
+            ->middleware('mode:wholesale')
+            ->name('documents.investorPacket');
     });
 
     // ── Buyers: admin, disposition_agent, buyers_agent ────────────────
-    Route::middleware('role:admin,disposition_agent,buyers_agent')->group(function () {
+    Route::middleware(['role:admin,disposition_agent,buyers_agent', 'mode:wholesale'])->group(function () {
         Route::get('/buyers/export', [BuyerController::class, 'export'])->name('buyers.export');
         Route::post('/buyers/import', [BuyerController::class, 'import'])->name('buyers.import');
         Route::post('/buyers/bulk-action', [BuyerController::class, 'bulkAction'])->name('buyers.bulkAction');
@@ -388,7 +398,7 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
     });
 
     // ── Comparable Sales / ARV Worksheet ─────────────────
-    Route::middleware('role:admin,agent,acquisition_agent,field_scout')->group(function () {
+    Route::middleware(['role:admin,agent,acquisition_agent,field_scout', 'mode:wholesale'])->group(function () {
         Route::post('/properties/{property}/comps', [ComparableSaleController::class, 'store'])->name('comps.store');
         Route::put('/comps/{comp}', [ComparableSaleController::class, 'update'])->name('comps.update');
         Route::delete('/comps/{comp}', [ComparableSaleController::class, 'destroy'])->name('comps.destroy');
