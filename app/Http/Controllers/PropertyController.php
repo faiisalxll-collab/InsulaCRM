@@ -33,12 +33,22 @@ class PropertyController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('address', 'like', "%{$search}%")
                   ->orWhere('city', 'like', "%{$search}%")
+                  ->orWhere('district', 'like', "%{$search}%")
+                  ->orWhere('plan_number', 'like', "%{$search}%")
                   ->orWhere('zip_code', 'like', "%{$search}%");
             });
         }
 
         if ($request->filled('property_type')) {
             $query->where('property_type', $request->property_type);
+        }
+
+        if ($request->filled('transaction_type')) {
+            $query->where('transaction_type', $request->transaction_type);
+        }
+
+        if ($request->filled('district')) {
+            $query->where('district', 'like', '%'.trim($request->district).'%');
         }
 
         if ($request->filled('condition')) {
@@ -58,7 +68,10 @@ class PropertyController extends Controller
 
         $properties = $query->latest()->paginate(25);
 
-        return view('properties.index', compact('properties'));
+        return view('properties.index', [
+            'properties' => $properties,
+            'propertyTypes' => CustomFieldService::getOptions('property_type'),
+        ]);
     }
 
     /**
@@ -139,7 +152,13 @@ class PropertyController extends Controller
     {
         $this->authorize('view', $property);
         $property->load('lead');
+        $property->loadCount([
+            'matches as eligible_matches_count' => fn ($query) => $query->where('status', 'eligible'),
+        ]);
 
-        return view('properties.show', compact('property'));
+        return view('properties.show', [
+            'property' => $property,
+            'propertyTypes' => CustomFieldService::getOptions('property_type'),
+        ]);
     }
 }
