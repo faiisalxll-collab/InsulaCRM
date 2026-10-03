@@ -9,6 +9,7 @@ use App\Models\Property;
 use App\Services\AddressNormalizationService;
 use App\Services\CustomFieldService;
 use App\Services\ZipTimezoneService;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class PropertyController extends Controller
@@ -73,6 +74,85 @@ class PropertyController extends Controller
             'properties' => $properties,
             'propertyTypes' => CustomFieldService::getOptions('property_type'),
         ]);
+    }
+
+    /**
+     * Show a standalone Saudi property creation form.
+     */
+    public function create()
+    {
+        $this->authorize('create', Property::class);
+
+        return view('properties.create', $this->formOptions());
+    }
+
+    /**
+     * Store a standalone Saudi property.
+     */
+    public function standaloneStore(PropertyRequest $request)
+    {
+        $this->authorize('create', Property::class);
+
+        $data = $request->validated();
+        $data = AddressNormalizationService::normalizeAll($data);
+        $data['tenant_id'] = auth()->user()->tenant_id;
+
+        $lead = Lead::query()->findOrFail($data['lead_id']);
+        $this->authorize('update', $lead);
+
+        $data['price_per_sqm'] = $this->pricePerSqm($data);
+
+        $property = Property::create($data);
+
+        AuditLog::log('property.created', $property);
+
+        return redirect()
+            ->route('properties.show', $property)
+            ->with('success', 'تم حفظ العقار وتشغيل المطابقة تلقائيًا.');
+    }
+
+    public function edit(Property $property)
+    {
+        $this->authorize('update', $property);
+
+        return view('properties.edit', [
+            'property' => $property,
+            ...$this->formOptions(),
+        ]);
+    }
+
+    public function update(PropertyRequest $request, Property $property)
+    {
+        $this->authorize('update', $property);
+
+        $data = $request->validated();
+        $data = AddressNormalizationService::normalizeAll($data);
+
+        $lead = Lead::query()->findOrFail($data['lead_id'] ?? $property->lead_id);
+        $this->authorize('update', $lead);
+
+        $data['lead_id'] = $lead->id;
+        $data['price_per_sqm'] = $this->pricePerSqm($data);
+
+        $property->update($data);
+
+        AuditLog::log('property.updated', $property);
+
+        return redirect()
+            ->route('properties.show', $property)
+            ->with('success', 'تم تحديث العقار وإعادة حساب المطابقات.');
+    }
+
+    public function destroy(Property $property)
+    {
+        $this->authorize('delete', $property);
+
+        AuditLog::log('property.deleted', $property);
+        $property->delete();
+
+        return redirect()
+            ->route('properties.index')
+            ->with('success', 'تم حذف العقار.');
     }
 
     /**
@@ -161,5 +241,33 @@ class PropertyController extends Controller
             'property' => $property,
             'propertyTypes' => CustomFieldService::getOptions('property_type'),
         ]);
+    }
+
+    private function formOptions(): array
+    {
+        $user = auth()->user();
+
+        $leads = Lead::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('agent_id', $user->id))
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'phone', 'agent_id']);
+
+        return [
+            'leads' => $leads,
+            'propertyTypes' => CustomFieldService::getOptions('property_type', $user->tenant),
+        ];
+    }
+
+    private function pricePerSqm(array $data): ?float
+    {
+        $price = $data['list_price'] ?? $data['asking_price'] ?? null;
+        $area = $data['area_sqm'] ?? null;
+
+        if ($price === null || $area === null || (float) $area <= 0) {
+            return $data['price_per_sqm'] ?? null;
+        }
+
+        return round((float) $price / (float) $area, 2);
     }
 }
