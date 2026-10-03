@@ -69,4 +69,36 @@ class SaudiDashboardTest extends TestCase
             ->assertDontSee('لوحة المكتب العقاري')
             ->assertSee('Customize');
     }
+
+    public function test_saudi_navigation_focuses_on_v1_core(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $this->get('/dashboard')
+            ->assertOk()
+            ->assertSee('الرئيسية')
+            ->assertSee('العملاء')
+            ->assertSee('العقارات')
+            ->assertSee('الطلبات')
+            ->assertSee('المطابقات')
+            ->assertSee('المعاينات')
+            ->assertSee('الصفقات')
+            ->assertSee('المهام والمواعيد')
+            ->assertSee('التقارير')
+            ->assertDontSee('Activity Feed')
+            ->assertDontSee('Marketing')
+            ->assertDontSee('Insights');
+    }
+
+    public function test_wholesale_navigation_keeps_legacy_operating_tools(): void
+    {
+        $this->actingAsAdmin(['business_mode' => 'wholesale']);
+
+        $this->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Activity Feed')
+            ->assertSee('Marketing')
+            ->assertSee('Insights');
+    }
+
 }
