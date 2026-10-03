@@ -135,6 +135,11 @@ class Property extends Model
         return $this->hasMany(ComparableSale::class)->latest('sale_date');
     }
 
+    public function photos()
+    {
+        return $this->hasMany(PropertyPhoto::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function matches()
     {
         return $this->hasMany(PropertyMatch::class);
