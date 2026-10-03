@@ -231,6 +231,39 @@ class TenantApiIsolationTest extends TestCase
         $response->assertDontSee('Secret activity');
     }
 
+
+    public function test_global_search_does_not_leak_another_office_records(): void
+    {
+        $role = Role::where('name', 'admin')->firstOrFail();
+        $adminA = User::factory()->create([
+            'tenant_id' => $this->officeA->id,
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+
+        $secretLead = $this->makeLead($this->officeB, 'CrossTenantSecret', 'Lead');
+        Buyer::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeB->id,
+            'first_name' => 'CrossTenantSecret',
+            'last_name' => 'Buyer',
+            'email' => 'cross-tenant-secret@example.test',
+        ]);
+        Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeB->id,
+            'lead_id' => $secretLead->id,
+            'address' => 'CrossTenantSecret Property',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'zip_code' => '14962',
+        ]);
+
+        $this->actingAs($adminA)
+            ->getJson('/search?q=CrossTenantSecret')
+            ->assertOk()
+            ->assertDontSee('CrossTenantSecret')
+            ->assertDontSee('cross-tenant-secret@example.test');
+    }
+
     private function makeLead(Tenant $tenant, string $firstName, string $lastName): Lead
     {
         return Lead::withoutGlobalScopes()->create([
