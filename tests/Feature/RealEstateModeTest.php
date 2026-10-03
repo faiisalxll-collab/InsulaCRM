@@ -29,15 +29,26 @@ class RealEstateModeTest extends TestCase
         $response->assertSee('Dispositions');
     }
 
-    public function test_realestate_sidebar_shows_showings_link(): void
+    public function test_realestate_sidebar_shows_saudi_v1_navigation(): void
     {
-        $this->actingAsAdmin(['business_mode' => 'realestate']);
+        $this->actingAsAdmin([
+            'business_mode' => 'realestate',
+            'country' => 'SA',
+            'currency' => 'SAR',
+            'locale' => 'ar',
+            'timezone' => 'Asia/Riyadh',
+        ]);
 
         $response = $this->get('/dashboard');
         $response->assertStatus(200);
-        $response->assertSee('Showings');
-        $response->assertSee('Open Houses');
-        $response->assertSee('Listings');
+        $response->assertSee('العقارات');
+        $response->assertSee('الطلبات');
+        $response->assertSee('المطابقات');
+        $response->assertSee('المعاينات');
+        $response->assertSee('الصفقات');
+        $response->assertDontSee('href="/listings"', false);
+        $response->assertDontSee('href="/open-houses"', false);
+        $response->assertDontSee('href="/buyers"', false);
     }
 
     public function test_wholesale_sidebar_hides_re_links(): void
