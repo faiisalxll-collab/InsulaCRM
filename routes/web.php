@@ -14,6 +14,7 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\ListController;
 use App\Http\Controllers\PluginController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\PropertyRequestController;
 use App\Http\Controllers\SequenceController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\InstallController;
@@ -161,6 +162,15 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
     Route::middleware(['role:admin,agent,listing_agent,buyers_agent', 'mode:realestate'])->group(function () {
         Route::resource('showings', ShowingController::class);
     });
+
+    // ── Property Requests & Matching (Saudi real estate V1) ───────
+    Route::middleware(['role:admin,agent,listing_agent,buyers_agent', 'mode:realestate'])->group(function () {
+        Route::post('/property-requests/{propertyRequest}/refresh', [PropertyRequestController::class, 'refresh'])
+            ->name('property-requests.refresh');
+        Route::resource('property-requests', PropertyRequestController::class)
+            ->parameters(['property-requests' => 'propertyRequest']);
+    });
+
 
     // ── Open Houses (real estate agent mode) ──────────────────────
     Route::middleware(['role:admin,agent,listing_agent,buyers_agent', 'mode:realestate'])->group(function () {
