@@ -90,11 +90,13 @@ class BusinessModeServiceTest extends TestCase
 
         $this->assertCount(9, $items);
         $keys = array_column($items, 'item_key');
-        $this->assertContains('inspection', $keys);
-        $this->assertContains('appraisal', $keys);
+        $this->assertContains('party_verification', $keys);
+        $this->assertContains('ownership_verification', $keys);
+        $this->assertContains('agreement_review', $keys);
         $this->assertContains('financing', $keys);
-        $this->assertContains('title_search', $keys);
-        $this->assertContains('final_walkthrough', $keys);
+        $this->assertContains('handover', $keys);
+        $this->assertContains('commission', $keys);
+        $this->assertContains('closing_documents', $keys);
     }
 
     public function test_realestate_stages_constant_has_12_stages(): void
