@@ -11,8 +11,9 @@ class SaudiPropertyMatchingTest extends TestCase
 {
     public function test_namar_villa_passes_hard_constraints_and_scores_explainably(): void
     {
-        [$tenant, $admin] = $this->createTenantWithAdmin();
-        $lead = $this->createLead($tenant, $admin);
+        $admin = $this->createTenantWithAdmin();
+        $tenant = $this->tenant;
+        $lead = $this->createLead();
         $property = Property::withoutGlobalScopes()->create([
             'tenant_id' => $tenant->id, 'lead_id' => $lead->id,
             'address' => 'شارع تجريبي', 'city' => 'Riyadh', 'state' => 'RIYADH', 'zip_code' => '14962',
@@ -40,8 +41,9 @@ class SaudiPropertyMatchingTest extends TestCase
 
     public function test_wrong_district_is_rejected_as_hard_constraint(): void
     {
-        [$tenant, $admin] = $this->createTenantWithAdmin();
-        $lead = $this->createLead($tenant, $admin);
+        $admin = $this->createTenantWithAdmin();
+        $tenant = $this->tenant;
+        $lead = $this->createLead();
         $property = Property::withoutGlobalScopes()->create([
             'tenant_id' => $tenant->id, 'lead_id' => $lead->id,
             'address' => 'Test', 'city' => 'Riyadh', 'state' => 'RIYADH', 'zip_code' => '12345',
@@ -63,9 +65,12 @@ class SaudiPropertyMatchingTest extends TestCase
 
     public function test_cross_tenant_property_is_always_rejected(): void
     {
-        [$a, $adminA] = $this->createTenantWithAdmin();
-        [$b, $adminB] = $this->createTenantWithAdmin();
-        $leadB = $this->createLead($b, $adminB);
+        $adminA = $this->createTenantWithAdmin(['slug' => 'office-a', 'email' => 'a@test.com']);
+        $a = $this->tenant;
+
+        $adminB = $this->createTenantWithAdmin(['slug' => 'office-b', 'email' => 'b@test.com']);
+        $b = $this->tenant;
+        $leadB = $this->createLead();
         $property = Property::withoutGlobalScopes()->create([
             'tenant_id' => $b->id, 'lead_id' => $leadB->id,
             'address' => 'Private', 'city' => 'Riyadh', 'state' => 'RIYADH', 'zip_code' => '12345',
