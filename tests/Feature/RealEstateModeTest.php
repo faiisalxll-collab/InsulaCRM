@@ -229,4 +229,43 @@ class RealEstateModeTest extends TestCase
         $this->assertSame('5000.00', $property->price_per_sqm);
     }
 
+
+    public function test_saudi_stage_change_does_not_run_legacy_buyer_matching(): void
+    {
+        $this->actingAsAdmin([
+            'business_mode' => 'realestate',
+            'country' => 'SA',
+            'currency' => 'SAR',
+            'locale' => 'ar',
+        ]);
+
+        $lead = $this->createLead();
+        $property = $this->createProperty([
+            'lead_id' => $lead->id,
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'city' => 'الرياض',
+            'listing_status' => 'active',
+        ]);
+
+        $deal = $this->createDeal([
+            'lead_id' => $lead->id,
+            'property_id' => $property->id,
+            'stage' => 'lead',
+        ]);
+
+        \App\Models\Buyer::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'max_purchase_price' => 99999999,
+        ]);
+
+        $this->patchJson(route('deals.updateStage', $deal), [
+            'stage' => 'active_listing',
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('deal_buyer_matches', [
+            'deal_id' => $deal->id,
+        ]);
+    }
+
 }
