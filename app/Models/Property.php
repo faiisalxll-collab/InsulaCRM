@@ -27,6 +27,9 @@ class Property extends Model
         'facing',
         'street_width_m',
         'property_age_years',
+        'floors',
+        'units',
+        'furnished',
         'finance_eligible',
         'price_per_sqm',
         'latitude',
@@ -57,6 +60,7 @@ class Property extends Model
         return [
             'area_sqm' => 'decimal:2',
             'street_width_m' => 'decimal:2',
+            'furnished' => 'boolean',
             'finance_eligible' => 'boolean',
             'price_per_sqm' => 'decimal:2',
             'latitude' => 'decimal:7',
@@ -98,7 +102,7 @@ class Property extends Model
             $matchingFields = [
                 'transaction_type','property_type','city','district','area_sqm','list_price',
                 'asking_price','bedrooms','street_width_m','facing','property_age_years',
-                'finance_eligible','listing_status',
+                'floors','units','furnished','finance_eligible','listing_status',
             ];
 
             if ($property->wasRecentlyCreated || $property->wasChanged($matchingFields)) {
