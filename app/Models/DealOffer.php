@@ -18,13 +18,17 @@ class DealOffer extends Model
         'expired' => 'Expired',
     ];
 
-    public const FINANCING_TYPES = [
+    public const SAUDI_FINANCING_TYPES = [
         'cash' => 'نقدي',
         'bank_finance' => 'تمويل بنكي',
+        'other' => 'أخرى',
+    ];
+
+    public const FINANCING_TYPES = [
+        ...self::SAUDI_FINANCING_TYPES,
         'conventional' => 'Conventional',
         'fha' => 'FHA',
         'va' => 'VA',
-        'other' => 'Other',
     ];
 
     protected $fillable = [
