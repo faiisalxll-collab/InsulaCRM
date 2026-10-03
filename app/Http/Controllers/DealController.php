@@ -51,6 +51,18 @@ class DealController extends Controller
                   })
                   ->orWhereHas('lead.property', function ($pq) use ($search) {
                       $pq->where('address', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('property', function ($pq) use ($search) {
+                      $pq->where('address', 'like', "%{$search}%")
+                          ->orWhere('city', 'like', "%{$search}%")
+                          ->orWhere('district', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('propertyRequest.lead', function ($clientQuery) use ($search) {
+                      $clientQuery->where(function ($inner) use ($search) {
+                          $inner->where('first_name', 'like', "%{$search}%")
+                              ->orWhere('last_name', 'like', "%{$search}%")
+                              ->orWhere('phone', 'like', "%{$search}%");
+                      });
                   });
             });
         }
