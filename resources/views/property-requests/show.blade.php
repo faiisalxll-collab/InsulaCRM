@@ -5,7 +5,6 @@
 
 @section('content')
 @php
-    $propertyTypes = AppServicesCustomFieldService::getOptions('property_type');
     $reasonLabels = [
         'transaction_type' => 'نوع العملية',
         'property_type' => 'نوع العقار',
@@ -34,7 +33,7 @@
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-5">العملية</dt>
-                        <dd class="col-7">{{ AppModelsPropertyRequest::TRANSACTION_TYPES[$propertyRequest->transaction_type] ?? $propertyRequest->transaction_type }}</dd>
+                        <dd class="col-7">{{ $transactionTypes[$propertyRequest->transaction_type] ?? $propertyRequest->transaction_type }}</dd>
                         <dt class="col-5">نوع العقار</dt>
                         <dd class="col-7">{{ $propertyTypes[$propertyRequest->property_type] ?? $propertyRequest->property_type }}</dd>
                         <dt class="col-5">المدينة</dt>
@@ -60,7 +59,7 @@
                         <dt class="col-5">الوسيط</dt>
                         <dd class="col-7">{{ $propertyRequest->agent?->name ?? '—' }}</dd>
                         <dt class="col-5">الحالة</dt>
-                        <dd class="col-7">{{ AppModelsPropertyRequest::STATUSES[$propertyRequest->status] ?? $propertyRequest->status }}</dd>
+                        <dd class="col-7">{{ $statuses[$propertyRequest->status] ?? $propertyRequest->status }}</dd>
                     </dl>
                     @if($propertyRequest->notes)
                         <hr><div class="text-muted small">ملاحظات</div><div>{{ $propertyRequest->notes }}</div>
