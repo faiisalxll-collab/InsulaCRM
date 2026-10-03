@@ -560,7 +560,11 @@ class DealController extends Controller
             'buyer_agent_email' => 'nullable|email|max:255',
             'offer_price' => 'required|numeric|min:0',
             'earnest_money' => 'nullable|numeric|min:0',
-            'financing_type' => 'nullable|in:' . implode(',', array_keys(DealOffer::FINANCING_TYPES)),
+            'financing_type' => 'nullable|in:' . implode(',', array_keys(
+                \App\Services\BusinessModeService::isRealEstate()
+                    ? DealOffer::SAUDI_FINANCING_TYPES
+                    : DealOffer::FINANCING_TYPES
+            )),
             'contingencies' => 'nullable|array',
             'contingencies.*' => 'string',
             'expiration_date' => 'nullable|date',
