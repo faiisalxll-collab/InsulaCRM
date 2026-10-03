@@ -115,4 +115,14 @@ class SaudiDashboardTest extends TestCase
             ->assertDontSee('Insights');
     }
 
+
+    public function test_saudi_quick_add_does_not_link_to_legacy_buyers(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $this->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee(route('buyers.create'), false);
+    }
+
 }
