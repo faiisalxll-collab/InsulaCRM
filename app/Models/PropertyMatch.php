@@ -10,7 +10,7 @@ class PropertyMatch extends Model
     protected $fillable = [
         'tenant_id','property_request_id','property_id','match_score',
         'hard_constraints_passed','location_score','price_score','area_score',
-        'features_score','finance_score','match_reasons','rejection_reasons','evaluated_at',
+        'features_score','finance_score','match_reasons','rejection_reasons','status','matched_at','evaluated_at',
     ];
 
     protected function casts(): array
@@ -19,6 +19,7 @@ class PropertyMatch extends Model
             'hard_constraints_passed' => 'boolean',
             'match_reasons' => 'array',
             'rejection_reasons' => 'array',
+            'matched_at' => 'datetime',
             'evaluated_at' => 'datetime',
         ];
     }
