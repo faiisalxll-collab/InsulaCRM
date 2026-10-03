@@ -114,7 +114,7 @@
                                 <span class="nav-link-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg>
                                 </span>
-                                <span class="nav-link-title">{{ __('Dashboard') }}</span>
+                                <span class="nav-link-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'الرئيسية' : __('Dashboard') }}</span>
                             </a>
                         </li>
 
@@ -124,21 +124,11 @@
                                 <span class="nav-link-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></svg>
                                 </span>
-                                <span class="nav-link-title">{{ __('Leads') }}</span>
+                                <span class="nav-link-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'العملاء' : __('Leads') }}</span>
                             </a>
                         </li>
                         @endif
 
-                        @if(($businessMode ?? 'wholesale') === 'realestate')
-                        <li class="nav-item {{ request()->is('listings*') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('listings.index') }}">
-                                <span class="nav-link-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0"/><path d="M9 8l1 0"/><path d="M9 12l1 0"/><path d="M9 16l1 0"/><path d="M14 8l1 0"/><path d="M14 12l1 0"/><path d="M14 16l1 0"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16"/></svg>
-                                </span>
-                                <span class="nav-link-title">{{ __('Listings') }}</span>
-                            </a>
-                        </li>
-                        @endif
 
                         @unless(auth()->user()->isDispositionAgent())
                         <li class="nav-item {{ request()->is('properties*') ? 'active' : '' }}">
@@ -146,7 +136,7 @@
                                 <span class="nav-link-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0"/><path d="M5 21v-14l8 -4v18"/><path d="M19 21v-10l-6 -4"/><path d="M9 9l0 .01"/><path d="M9 12l0 .01"/><path d="M9 15l0 .01"/></svg>
                                 </span>
-                                <span class="nav-link-title">{{ __('Properties') }}</span>
+                                <span class="nav-link-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'العقارات' : __('Properties') }}</span>
                             </a>
                         </li>
                         @endunless
@@ -173,15 +163,7 @@
                                 <span class="nav-link-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"/></svg>
                                 </span>
-                                <span class="nav-link-title">{{ __('Showings') }}</span>
-                            </a>
-                        </li>
-                        <li class="nav-item {{ request()->is('open-houses*') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('open-houses.index') }}">
-                                <span class="nav-link-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></svg>
-                                </span>
-                                <span class="nav-link-title">{{ __('Open Houses') }}</span>
+                                <span class="nav-link-title">المعاينات</span>
                             </a>
                         </li>
                         @endif
@@ -192,12 +174,12 @@
                                 <span class="nav-link-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
                                 </span>
-                                <span class="nav-link-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? __('Transactions') : __('Pipeline') }}</span>
+                                <span class="nav-link-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'الصفقات' : __('Pipeline') }}</span>
                             </a>
                         </li>
                         @endunless
 
-                        @if(auth()->user()->canManageBuyers())
+                        @if(($businessMode ?? 'wholesale') !== 'realestate' && auth()->user()->canManageBuyers())
                         <li class="nav-item {{ request()->is('buyers*') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('buyers.index') }}">
                                 <span class="nav-link-icon">
@@ -214,7 +196,7 @@
                                 <span class="nav-link-icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><rect x="4" y="5" width="16" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="4" y1="11" x2="20" y2="11"/><line x1="11" y1="15" x2="12" y2="15"/><line x1="12" y1="15" x2="12" y2="18"/></svg>
                                 </span>
-                                <span class="nav-link-title">{{ __('Calendar') }}</span>
+                                <span class="nav-link-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'المهام والمواعيد' : __('Calendar') }}</span>
                             </a>
                         </li>
                         @endunless
@@ -263,7 +245,7 @@
                             </a>
                             <div class="dropdown-menu {{ $insightsActive ? 'show' : '' }}">
 
-                                <a class="dropdown-item {{ request()->is('reports*') ? 'active' : '' }}" href="{{ route('reports.index') }}">{{ __('Reports') }}</a>
+                                <a class="dropdown-item {{ request()->is('reports*') ? 'active' : '' }}" href="{{ route('reports.index') }}">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'التقارير' : __('Reports') }}</a>
                                 <a class="dropdown-item {{ request()->is('audit-log*') ? 'active' : '' }}" href="{{ route('audit-log.index') }}">{{ __('Audit Log') }}</a>
                                 <a class="dropdown-item {{ request()->is('ai-history*') ? 'active' : '' }}" href="{{ route('ai-log.index') }}">{{ __('AI History') }}</a>
                             </div>
