@@ -122,7 +122,7 @@ class RealEstateModeTest extends TestCase
 
         $response = $this->get("/pipeline/{$deal->id}");
         $response->assertStatus(200);
-        $response->assertSee('Offers');
+        $response->assertSee('العروض والتفاوض');
     }
 
     public function test_saudi_web_property_can_be_saved_without_us_address_fields(): void
