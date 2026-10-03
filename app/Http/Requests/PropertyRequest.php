@@ -71,7 +71,7 @@ class PropertyRequest extends FormRequest
                 'latitude' => 'nullable|numeric|between:-90,90',
                 'longitude' => 'nullable|numeric|between:-180,180',
                 'list_price' => 'nullable|numeric|min:0',
-                'listing_status' => 'nullable|in:active,pending,sold,withdrawn,expired',
+                'listing_status' => 'nullable|in:active,pending,sold,leased,withdrawn,expired',
                 'listed_at' => 'nullable|date',
                 'sold_at' => 'nullable|date',
                 'sold_price' => 'nullable|numeric|min:0',
