@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Property;
 use App\Services\BusinessModeService;
 use Tests\TestCase;
 
@@ -122,4 +123,52 @@ class RealEstateModeTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Offers');
     }
+
+    public function test_saudi_web_property_can_be_saved_without_us_address_fields(): void
+    {
+        $this->actingAsAdmin([
+            'business_mode' => 'realestate',
+            'country' => 'SA',
+            'currency' => 'SAR',
+            'locale' => 'ar',
+            'timezone' => 'Asia/Riyadh',
+        ]);
+
+        $lead = $this->createLead();
+
+        $response = $this->post(route('leads.property.store', $lead), [
+            'address' => 'شارع اختبار',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'district' => 'نمار',
+            'plan_number' => '4321',
+            'area_sqm' => 500,
+            'bedrooms' => 5,
+            'bathrooms' => 4,
+            'street_width_m' => 20,
+            'floors' => 2,
+            'units' => 1,
+            'furnished' => '0',
+            'finance_eligible' => '1',
+            'list_price' => 2500000,
+            'listing_status' => 'active',
+        ]);
+
+        $response->assertSessionHasNoErrors()
+            ->assertRedirect(route('leads.show', $lead));
+
+        $property = Property::withoutGlobalScopes()
+            ->where('lead_id', $lead->id)
+            ->firstOrFail();
+
+        $this->assertNull($property->state);
+        $this->assertNull($property->zip_code);
+        $this->assertSame('villa', $property->property_type);
+        $this->assertSame('sale', $property->transaction_type);
+        $this->assertSame('نمار', $property->district);
+        $this->assertTrue($property->finance_eligible);
+        $this->assertSame('5000.00', $property->price_per_sqm);
+    }
+
 }
