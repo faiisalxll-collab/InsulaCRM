@@ -526,7 +526,7 @@ class DealController extends Controller
             'subject' => __('Offer received'),
             'body' => __(':buyer offered :price', [
                 'buyer' => $request->buyer_name,
-                'price' => '$' . number_format($request->offer_price, 2),
+                'price' => \App\Helpers\TenantFormatHelper::currency((float) $request->offer_price),
             ]),
             'logged_at' => now(),
         ]);
