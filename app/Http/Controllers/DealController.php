@@ -18,6 +18,7 @@ use App\Notifications\BuyerMatchFound;
 use App\Notifications\DealStageChanged as DealStageChangedNotification;
 use App\Services\BuyerScoreService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -128,11 +129,22 @@ class DealController extends Controller
             $updateData['due_diligence_end_date'] = $deal->contract_date->copy()->addDays($deal->inspection_period_days);
         }
 
-        $deal->update($updateData);
-
-        if (\App\Services\BusinessModeService::isRealEstate() && $deal->property_id && $deal->property_request_id) {
-            $this->syncSaudiTransactionState($deal, $request->stage);
-        }
+        $this->mutateSaudiTransaction($deal, function () use ($deal, $request, $updateData, &$oldStage) {
+            $oldStage = $deal->stage;
+            if ($this->isSaudiTransaction($deal)) {
+                $this->validateSaudiTransition($deal, $request->stage);
+            }
+            if ($oldStage === $request->stage && $this->isSaudiTransaction($deal)) {
+                return;
+            }
+            $deal->update($updateData);
+            if ($this->isSaudiTransaction($deal)) {
+                $this->syncSaudiTransactionState($deal, $request->stage);
+                if ($request->stage === 'under_contract') {
+                    $this->ensureTransactionChecklist($deal);
+                }
+            }
+        });
 
         Activity::create([
             'tenant_id' => auth()->user()->tenant_id,
@@ -281,13 +293,34 @@ class DealController extends Controller
 
         if (array_key_exists('commission_status', $data)) {
             if ($data['commission_status'] === 'paid') {
-                $data['commission_paid_at'] = $data['commission_paid_at'] ?? now();
+                $data['commission_paid_at'] = $data['commission_paid_at'] ?? $deal->commission_paid_at ?? now();
             } else {
                 $data['commission_paid_at'] = null;
             }
         }
 
-        $deal->update($data);
+        $this->mutateSaudiTransaction($deal, function () use ($deal, $data) {
+            if ($this->isSaudiTransaction($deal)) {
+                if (array_key_exists('contract_price', $data)
+                    && (($deal->stage === 'closed_won' && (float) $data['contract_price'] !== (float) $deal->contract_price)
+                        || (in_array($deal->stage, ['under_contract', 'inspection', 'appraisal', 'closing'], true)
+                            && (float) $data['contract_price'] <= 0))) {
+                    throw ValidationException::withMessages(['contract_price' => 'قيمة الاتفاق لا يمكن إفراغها أو تغييرها بعد الإغلاق.']);
+                }
+                $status = $data['commission_status'] ?? $deal->commission_status;
+                if (in_array($status, ['due', 'paid'], true) && $deal->stage !== 'closed_won') {
+                    throw ValidationException::withMessages(['commission_status' => 'تستحق العمولة بعد إغلاق الصفقة بنجاح.']);
+                }
+                if (! empty($data['commission_paid_at']) && $status !== 'paid') {
+                    throw ValidationException::withMessages(['commission_paid_at' => 'تاريخ السداد يتطلب حالة عمولة مدفوعة.']);
+                }
+            }
+            $deal->update($data);
+            if ($this->isSaudiTransaction($deal) && $deal->stage === 'closed_won'
+                && $deal->total_commission !== null && $deal->commission_status === 'pending') {
+                $deal->update(['commission_status' => 'due']);
+            }
+        });
 
         // Recalculate due_diligence_end_date if relevant fields changed
         if (
@@ -610,35 +643,62 @@ class DealController extends Controller
         ]);
 
         $oldStatus = $offer->status;
-        $offer->update($request->only(['status', 'counter_price', 'notes']));
-
-        if (\App\Services\BusinessModeService::isRealEstate() && $deal->property_id && $deal->property_request_id) {
-            if ($offer->status === 'countered') {
-                $deal->update([
-                    'stage' => 'negotiating',
-                    'stage_changed_at' => now(),
-                ]);
+        $this->mutateSaudiTransaction($deal, function () use ($deal, $offer, $request, &$oldStatus) {
+            $offer->refresh();
+            $oldStatus = $offer->status;
+            if ($this->isSaudiTransaction($deal)) {
+                if (in_array($deal->stage, ['closed_won', 'closed_lost'], true)) {
+                    throw ValidationException::withMessages(['status' => 'الصفقة مغلقة؛ لا يمكن تعديل عروضها.']);
+                }
+                if ($oldStatus === 'accepted'
+                    && (($request->filled('status') && $request->status !== 'accepted') || $request->has('counter_price'))) {
+                    throw ValidationException::withMessages(['status' => 'العرض المقبول محفوظ ضمن سجل الاتفاق.']);
+                }
+                if ($request->status === 'accepted' && $oldStatus !== 'accepted') {
+                    if (! in_array($oldStatus, ['pending', 'countered'], true)
+                        || $deal->offers()->where('status', 'accepted')->whereKeyNot($offer->id)->exists()) {
+                        throw ValidationException::withMessages(['status' => 'لا يمكن قبول هذا العرض أو يوجد عرض مقبول بالفعل.']);
+                    }
+                    $price = $request->input('counter_price', $offer->counter_price) ?? $offer->offer_price;
+                    $this->validateSaudiTransition($deal, 'under_contract', (float) $price);
+                }
+                if ($request->status === 'countered') {
+                    if ((float) $request->input('counter_price', $offer->counter_price) <= 0) {
+                        throw ValidationException::withMessages(['counter_price' => 'سجّل قيمة موجبة للعرض المقابل.']);
+                    }
+                    $this->validateSaudiTransition($deal, 'negotiating');
+                }
             }
+            $offer->update($request->only(['status', 'counter_price', 'notes']));
 
-            if ($offer->status === 'accepted') {
-                $acceptedPrice = $offer->counter_price ?? $offer->offer_price;
+            if (\App\Services\BusinessModeService::isRealEstate() && $deal->property_id && $deal->property_request_id) {
+                if ($offer->status === 'countered' && $oldStatus !== 'countered') {
+                    $deal->update([
+                        'stage' => 'negotiating',
+                        'stage_changed_at' => now(),
+                    ]);
+                }
 
-                $deal->update([
-                    'contract_price' => $acceptedPrice,
-                    'contract_date' => $deal->contract_date ?? now()->toDateString(),
-                    'stage' => 'under_contract',
-                    'stage_changed_at' => now(),
-                ]);
+                if ($offer->status === 'accepted' && $oldStatus !== 'accepted') {
+                    $acceptedPrice = $offer->counter_price ?? $offer->offer_price;
 
-                $deal->offers()
-                    ->whereKeyNot($offer->id)
-                    ->whereIn('status', ['pending', 'countered'])
-                    ->update(['status' => 'rejected']);
+                    $deal->update([
+                        'contract_price' => $acceptedPrice,
+                        'contract_date' => $deal->contract_date ?? now()->toDateString(),
+                        'stage' => 'under_contract',
+                        'stage_changed_at' => now(),
+                    ]);
 
-                $this->syncSaudiTransactionState($deal, 'under_contract');
-                $this->ensureTransactionChecklist($deal);
+                    $deal->offers()
+                        ->whereKeyNot($offer->id)
+                        ->whereIn('status', ['pending', 'countered'])
+                        ->update(['status' => 'rejected']);
+
+                    $this->syncSaudiTransactionState($deal, 'under_contract');
+                    $this->ensureTransactionChecklist($deal);
+                }
             }
-        }
+        });
 
         if ($oldStatus !== $offer->status) {
             Activity::create([
@@ -665,7 +725,14 @@ class DealController extends Controller
         $deal = Deal::findOrFail($offer->deal_id);
         $this->authorize('update', $deal);
 
-        $offer->delete();
+        $this->mutateSaudiTransaction($deal, function () use ($deal, $offer) {
+            $offer->refresh();
+            if ($this->isSaudiTransaction($deal)
+                && ($offer->status === 'accepted' || in_array($deal->stage, ['closed_won', 'closed_lost'], true))) {
+                throw ValidationException::withMessages(['offer' => 'لا يمكن حذف عرض مقبول أو عرض لصفقة مغلقة.']);
+            }
+            $offer->delete();
+        });
 
         return response()->json(['success' => true]);
     }
@@ -685,6 +752,74 @@ class DealController extends Controller
         }
     }
 
+    private function isSaudiTransaction(Deal $deal): bool
+    {
+        return \App\Services\BusinessModeService::isRealEstate()
+            && $deal->property_id && $deal->property_request_id;
+    }
+
+    private function mutateSaudiTransaction(Deal $deal, callable $mutation): void
+    {
+        if (! $this->isSaudiTransaction($deal)) {
+            $mutation();
+            return;
+        }
+
+        DB::transaction(function () use ($deal, $mutation) {
+            // All reservation/closing mutations lock in the same order. Two deals
+            // competing for one property or request cannot both commit a reservation.
+            $property = \App\Models\Property::whereKey($deal->property_id)->lockForUpdate()->firstOrFail();
+            $criteria = \App\Models\PropertyRequest::whereKey($deal->property_request_id)->lockForUpdate()->firstOrFail();
+            $locked = Deal::whereKey($deal->id)->lockForUpdate()->firstOrFail();
+            $deal->setRawAttributes($locked->getAttributes(), true);
+            $deal->setRelation('property', $property);
+            $deal->setRelation('propertyRequest', $criteria);
+            $this->authorize('update', $deal);
+            $mutation();
+        }, 3);
+    }
+
+    private function otherCommittedDeals(Deal $deal)
+    {
+        return Deal::where('tenant_id', $deal->tenant_id)->whereKeyNot($deal->id)
+            ->whereIn('stage', ['under_contract', 'inspection', 'appraisal', 'closing', 'closed_won']);
+    }
+
+    private function validateSaudiTransition(Deal $deal, string $stage, ?float $price = null): void
+    {
+        $reservedStages = ['under_contract', 'inspection', 'appraisal', 'closing'];
+        if (in_array($deal->stage, ['closed_won', 'closed_lost'], true) && $stage !== $deal->stage) {
+            throw ValidationException::withMessages(['stage' => 'لا يمكن إعادة فتح صفقة مغلقة ضمن مسار V1.']);
+        }
+        if (in_array($deal->stage, $reservedStages, true)
+            && ! in_array($stage, [...$reservedStages, 'closed_won', 'closed_lost'], true)) {
+            throw ValidationException::withMessages(['stage' => 'أنهِ الاتفاق كصفقة لم تتم قبل إعادة إتاحة العقار والطلب.']);
+        }
+        if (! in_array($stage, [...$reservedStages, 'closed_won'], true)) {
+            return;
+        }
+        if (($price ?? (float) $deal->contract_price) <= 0) {
+            throw ValidationException::withMessages(['stage' => 'يجب تسجيل قيمة اتفاق موجبة.']);
+        }
+        // Repeating a completed stage must not re-sell or change its sale date.
+        if ($deal->stage === 'closed_won' && $stage === 'closed_won') {
+            return;
+        }
+        $property = $deal->property;
+        $criteria = $deal->propertyRequest;
+        if (! $property || ! $criteria
+            || (int) $deal->lead_id !== (int) $property->lead_id
+            || $property->transaction_type !== $criteria->transaction_type
+            || ! in_array($property->listing_status, ['active', 'pending'], true)
+            || ! in_array($criteria->status, ['active', 'paused'], true)
+            || $this->otherCommittedDeals($deal)->where(function ($query) use ($deal) {
+                $query->where('property_id', $deal->property_id)
+                    ->orWhere('property_request_id', $deal->property_request_id);
+            })->exists()) {
+            throw ValidationException::withMessages(['stage' => 'العقار أو الطلب غير متاح أو مرتبط باتفاق آخر.']);
+        }
+    }
+
     private function syncSaudiTransactionState(Deal $deal, string $stage): void
     {
         $deal->loadMissing(['property', 'propertyRequest']);
@@ -695,7 +830,7 @@ class DealController extends Controller
             return;
         }
 
-        if ($stage === 'under_contract') {
+        if (in_array($stage, ['under_contract', 'inspection', 'appraisal', 'closing'], true)) {
             if ($property->listing_status === 'active') {
                 $property->update(['listing_status' => 'pending']);
             }
@@ -730,11 +865,11 @@ class DealController extends Controller
         }
 
         if ($stage === 'closed_lost') {
-            if ($property->listing_status === 'pending') {
+            if ($property->listing_status === 'pending' && ! $this->otherCommittedDeals($deal)->where('property_id', $property->id)->exists()) {
                 $property->update(['listing_status' => 'active']);
             }
 
-            if ($propertyRequest->status === 'paused') {
+            if ($propertyRequest->status === 'paused' && ! $this->otherCommittedDeals($deal)->where('property_request_id', $propertyRequest->id)->exists()) {
                 $propertyRequest->update(['status' => 'active']);
             }
         }
