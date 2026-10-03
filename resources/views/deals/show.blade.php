@@ -18,7 +18,7 @@
 <div class="row" @if(($businessMode ?? 'wholesale') === 'realestate') dir="rtl" @endif>
     <div class="col-md-8">
         <!-- AI Briefing (auto-loads) -->
-        @if(auth()->user()->tenant->ai_enabled && auth()->user()->tenant->ai_briefings_enabled)
+        @if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled && auth()->user()->tenant->ai_briefings_enabled)
         <div class="card mb-3" id="deal-briefing-card" style="border-left: 3px solid #ae3ec9; background: linear-gradient(135deg, rgba(174,62,201,0.03) 0%, rgba(174,62,201,0.07) 100%);">
             <div class="card-body py-3">
                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -114,7 +114,7 @@
             <div class="card-header">
                 <h3 class="card-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? __('Transaction Information') : __('Deal Information') }}</h3>
                 <div class="card-actions">
-                    @if(auth()->user()->tenant->ai_enabled)
+                    @if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled)
                     <button type="button" class="btn btn-outline-purple btn-sm" id="ai-analyze-btn" title="{{ __('AI Deal Analysis') }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brain" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15.5 13a3.5 3.5 0 0 0 -3.5 3.5v1a3.5 3.5 0 0 0 7 0v-1.8"/><path d="M8.5 13a3.5 3.5 0 0 1 3.5 3.5v1a3.5 3.5 0 0 1 -7 0v-1.8"/><path d="M17.5 16a3.5 3.5 0 0 0 0 -7h-.5"/><path d="M19 9.3v-2.8a3.5 3.5 0 0 0 -7 0"/><path d="M6.5 16a3.5 3.5 0 0 1 0 -7h.5"/><path d="M5 9.3v-2.8a3.5 3.5 0 0 1 7 0v10"/></svg>
                         {{ __('AI Analysis') }}
@@ -124,7 +124,7 @@
                         {{ __('Stage Advice') }}
                     </button>
                     @endif
-                    @if(($businessMode ?? 'wholesale') === 'realestate' && auth()->user()->tenant->ai_enabled)
+                    @if(config('features.saudi_marketing_ai_v2', false) && ($businessMode ?? 'wholesale') === 'realestate' && auth()->user()->tenant->ai_enabled)
                     <button type="button" class="btn btn-outline-purple btn-sm" id="marketing-kit-btn" title="{{ __('Marketing Kit') }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 8a3 3 0 0 1 0 6"/><path d="M10 8v11a1 1 0 0 1 -1 1h-1a1 1 0 0 1 -1 -1v-5"/><path d="M12 8h0l4.524 -3.77a.9 .9 0 0 1 1.476 .692v12.156a.9 .9 0 0 1 -1.476 .692l-4.524 -3.77h-8a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h8"/></svg>
                         {{ __('Marketing Kit') }}
@@ -148,7 +148,7 @@
             <div class="card-body">
                 <div class="datagrid">
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Stage') }}</div>
+                        <div class="datagrid-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'المرحلة' : __('Stage') }}</div>
                         <div class="datagrid-content">
                             <span class="badge bg-primary-lt">{{ \App\Models\Deal::stageLabel($deal->stage) }}</span>
                         </div>
@@ -208,11 +208,11 @@
                     </div>
                     @endif
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Contract Date') }}</div>
+                        <div class="datagrid-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تاريخ الاتفاق' : __('Contract Date') }}</div>
                         <div class="datagrid-content">{{ $deal->contract_date ? Fmt::date($deal->contract_date) : '-' }}</div>
                     </div>
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Closing Date') }}</div>
+                        <div class="datagrid-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تاريخ الإغلاق' : __('Closing Date') }}</div>
                         <div class="datagrid-content">{{ $deal->closing_date ? $deal->closing_date->format('M d, Y') : '-' }}</div>
                     </div>
                     @if(($businessMode ?? 'wholesale') === 'wholesale')
@@ -245,7 +245,7 @@
         </div>
 
         <!-- Buyer Matches -->
-        @if($deal->buyerMatches->count())
+        @if(($businessMode ?? 'wholesale') === 'wholesale' && $deal->buyerMatches->count())
         <div class="card mb-3">
             <div class="card-header">
                 <h3 class="card-title">{{ __('Matched') }} {{ $modeTerms['buyer_label'] ?? __('Buyers') }}</h3>
@@ -425,7 +425,7 @@
 
     <div class="col-md-4">
         <!-- Lead & Property Context -->
-        @if($deal->lead)
+        @if(($businessMode ?? 'wholesale') === 'wholesale' && $deal->lead)
         <div class="card mb-3">
             <div class="card-header">
                 <h3 class="card-title">
@@ -535,7 +535,7 @@
         <!-- Stage Management -->
         <div class="card mb-3">
             <div class="card-header">
-                <h3 class="card-title">{{ __('Change Stage') }}</h3>
+                <h3 class="card-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تغيير المرحلة' : __('Change Stage') }}</h3>
             </div>
             <div class="card-body">
                 <form id="stage-form">
@@ -544,7 +544,7 @@
                             <option value="{{ $key }}" {{ $deal->stage === $key ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
-                    <button type="submit" class="btn btn-primary w-100">{{ __('Update Stage') }}</button>
+                    <button type="submit" class="btn btn-primary w-100">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'حفظ المرحلة' : __('Update Stage') }}</button>
                 </form>
             </div>
         </div>
@@ -606,7 +606,7 @@
     </div>
 </div>
 
-@if(auth()->user()->tenant->ai_enabled)
+@if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled)
 <!-- AI Result Modal -->
 <div class="modal modal-blur fade" id="deal-ai-modal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -681,7 +681,7 @@ if (window.trackRecentlyViewed) {
     window.trackRecentlyViewed('deal', {{ $deal->id }}, @json($deal->title ?? 'Deal #'.$deal->id), '{{ route("deals.show", $deal) }}');
 }
 
-@if(auth()->user()->tenant->ai_enabled)
+@if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled)
 // ── Auto-load AI Briefing ───────────────────────
 (function() {
     var briefingText = document.getElementById('deal-briefing-text');
@@ -941,7 +941,7 @@ document.addEventListener('DOMContentLoaded', function() {
 @endif
 </script>
 @endpush
-@if(($businessMode ?? 'wholesale') === 'realestate' && auth()->user()->tenant->ai_enabled)
+@if(config('features.saudi_marketing_ai_v2', false) && ($businessMode ?? 'wholesale') === 'realestate' && auth()->user()->tenant->ai_enabled)
 @include('deals._marketing_kit_modal')
 @push('scripts')
 <script>
