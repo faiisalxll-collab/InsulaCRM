@@ -156,6 +156,12 @@ class PropertyRequestController extends Controller
     {
         $this->authorize('delete', $propertyRequest);
 
+        if ($propertyRequest->showings()->exists() || $propertyRequest->deals()->exists()) {
+            return redirect()
+                ->route('property-requests.show', $propertyRequest)
+                ->with('error', 'لا يمكن حذف طلب دخل في معاينة أو صفقة. حدّث حالته للحفاظ على سجل المكتب.');
+        }
+
         AuditLog::log('property_request.deleted', $propertyRequest);
         $propertyRequest->delete();
 
