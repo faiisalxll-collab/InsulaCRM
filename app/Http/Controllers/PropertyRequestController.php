@@ -56,9 +56,13 @@ class PropertyRequestController extends Controller
         }
 
         $propertyRequests = $query->latest()->paginate(25)->withQueryString();
-        $propertyTypes = CustomFieldService::getOptions('property_type');
 
-        return view('property-requests.index', compact('propertyRequests', 'propertyTypes'));
+        return view('property-requests.index', [
+            'propertyRequests' => $propertyRequests,
+            'propertyTypes' => CustomFieldService::getOptions('property_type'),
+            'transactionTypes' => PropertySearchRequest::TRANSACTION_TYPES,
+            'statuses' => PropertySearchRequest::STATUSES,
+        ]);
     }
 
     public function create()
@@ -99,7 +103,13 @@ class PropertyRequestController extends Controller
             ->orderByDesc('match_score')
             ->paginate(25);
 
-        return view('property-requests.show', compact('propertyRequest', 'matches'));
+        return view('property-requests.show', [
+            'propertyRequest' => $propertyRequest,
+            'matches' => $matches,
+            'propertyTypes' => CustomFieldService::getOptions('property_type'),
+            'transactionTypes' => PropertySearchRequest::TRANSACTION_TYPES,
+            'statuses' => PropertySearchRequest::STATUSES,
+        ]);
     }
 
     public function edit(PropertySearchRequest $propertyRequest)
