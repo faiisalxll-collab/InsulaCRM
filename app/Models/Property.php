@@ -19,6 +19,17 @@ class Property extends Model
         'state',
         'zip_code',
         'property_type',
+        'transaction_type',
+        'district',
+        'plan_number',
+        'area_sqm',
+        'facing',
+        'street_width_m',
+        'property_age_years',
+        'finance_eligible',
+        'price_per_sqm',
+        'latitude',
+        'longitude',
         'bedrooms',
         'bathrooms',
         'square_footage',
@@ -43,6 +54,12 @@ class Property extends Model
     protected function casts(): array
     {
         return [
+            'area_sqm' => 'decimal:2',
+            'street_width_m' => 'decimal:2',
+            'finance_eligible' => 'boolean',
+            'price_per_sqm' => 'decimal:2',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
             'estimated_value' => 'decimal:2',
             'repair_estimate' => 'decimal:2',
             'after_repair_value' => 'decimal:2',
@@ -90,6 +107,11 @@ class Property extends Model
     public function comparableSales()
     {
         return $this->hasMany(ComparableSale::class)->latest('sale_date');
+    }
+
+    public function matches()
+    {
+        return $this->hasMany(PropertyMatch::class);
     }
 
     public function showings()
