@@ -120,6 +120,11 @@ class LeadController extends Controller
                 $targetAgent = User::where('id', $request->agent_id)
                     ->where('tenant_id', auth()->user()->tenant_id)
                     ->firstOrFail();
+
+                if (! auth()->user()->isAdmin() && (int) $targetAgent->id !== (int) auth()->id()) {
+                    abort(403);
+                }
+
                 foreach ($leads as $lead) {
                     $lead->update(['agent_id' => $targetAgent->id]);
                 }
@@ -143,11 +148,24 @@ class LeadController extends Controller
                 break;
 
             case 'delete':
+                $deleted = 0;
+                $blocked = 0;
+
                 foreach ($leads as $lead) {
+                    if ($this->hasSaudiWorkflowLinks($lead)) {
+                        $blocked++;
+                        continue;
+                    }
+
                     $lead->delete();
                     AuditLog::log('lead.deleted', $lead);
+                    $deleted++;
                 }
-                $message = "{$count} lead(s) deleted.";
+
+                $message = "{$deleted} lead(s) deleted.";
+                if ($blocked > 0) {
+                    $message .= " {$blocked} linked client(s) kept to preserve transaction history.";
+                }
                 break;
         }
 
@@ -288,14 +306,7 @@ class LeadController extends Controller
     {
         $this->authorize('delete', $lead);
 
-        if (
-            \App\Services\BusinessModeService::isRealEstate()
-            && (
-                $lead->properties()->exists()
-                || $lead->propertyRequests()->exists()
-                || $lead->deals()->exists()
-            )
-        ) {
+        if ($this->hasSaudiWorkflowLinks($lead)) {
             return redirect()
                 ->route('leads.show', $lead)
                 ->with('error', 'لا يمكن حذف عميل مرتبط بعقار أو طلب أو صفقة. حدّث حالته بدل الحذف للحفاظ على سجل المكتب.');
@@ -414,6 +425,16 @@ class LeadController extends Controller
 
         return redirect()->route('leads.show', $lead)
             ->with('success', 'Photo deleted.');
+    }
+
+    private function hasSaudiWorkflowLinks(Lead $lead): bool
+    {
+        return \App\Services\BusinessModeService::isRealEstate()
+            && (
+                $lead->properties()->exists()
+                || $lead->propertyRequests()->exists()
+                || $lead->deals()->exists()
+            );
     }
 
     public function export(Request $request)
