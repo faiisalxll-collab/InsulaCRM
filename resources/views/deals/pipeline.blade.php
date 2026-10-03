@@ -604,7 +604,7 @@
                         <div>${deal.agent ? deal.agent.name : '-'}</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Contract Price ($)') }}</label>
+                        <label class="form-label">{{ $businessMode === 'realestate' ? 'قيمة الاتفاق (ر.س)' : __('Contract Price ($)') }}</label>
                         <input type="number" name="contract_price" class="form-control" step="0.01" value="${deal.contract_price || ''}">
                     </div>
                     @if($businessMode === 'wholesale')
@@ -618,20 +618,12 @@
                     </div>
                     @else
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Listing Commission (%)') }}</label>
-                        <input type="number" name="listing_commission_pct" class="form-control" step="0.01" min="0" max="100" value="${deal.listing_commission_pct || ''}">
+                        <label class="form-label">إجمالي العمولة (ر.س)</label>
+                        <input type="number" name="total_commission" class="form-control" step="0.01" min="0" value="${deal.total_commission || ''}">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">{{ __('Buyer Commission (%)') }}</label>
-                        <input type="number" name="buyer_commission_pct" class="form-control" step="0.01" min="0" max="100" value="${deal.buyer_commission_pct || ''}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ __('Total Commission ($)') }}</label>
-                        <input type="number" name="total_commission" class="form-control" step="0.01" value="${deal.total_commission || ''}">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ __('MLS #') }}</label>
-                        <input type="text" name="mls_number" class="form-control" maxlength="30" value="${deal.mls_number || ''}">
+                        <label class="form-label">حصة المكتب من العمولة (%)</label>
+                        <input type="number" name="brokerage_split_pct" class="form-control" step="0.01" min="0" max="100" value="${deal.brokerage_split_pct || ''}">
                     </div>
                     @endif
                     <div class="row mb-3">
@@ -644,11 +636,13 @@
                             <input type="date" name="closing_date" class="form-control" value="${deal.closing_date ? deal.closing_date.split('T')[0] : ''}">
                         </div>
                     </div>
+                    @if($businessMode === 'wholesale')
                     <div class="mb-3">
                         <label class="form-label">{{ __('Inspection Period (days)') }}</label>
                         <input type="number" name="inspection_period_days" class="form-control" min="0" value="${deal.inspection_period_days || ''}">
                     </div>
                     ${deal.due_diligence_end_date ? `<div class="alert ${deal.is_due_diligence_urgent ? 'alert-danger' : 'alert-info'} mb-3"><strong>{{ __('Due Diligence:') }}</strong> {{ __('Ends') }} ${new Date(deal.due_diligence_end_date).toLocaleDateString()} (${deal.due_diligence_days_remaining ?? '?'} {{ __('days left') }})</div>` : ''}
+                    @endif
                     <div class="mb-3">
                         <label class="form-label">{{ __('Notes') }}</label>
                         <textarea name="notes" class="form-control" rows="3">${deal.notes || ''}</textarea>
@@ -817,7 +811,7 @@
         // Hide the quick-edit button while editing
         btn.style.display = 'none';
 
-        var feeLabel = '{{ $businessMode === "realestate" ? __("Total Commission") : __("Assignment Fee") }}';
+        var feeLabel = '{{ $businessMode === "realestate" ? "إجمالي العمولة" : __("Assignment Fee") }}';
         var feeName = feeField;
 
         cardBody.innerHTML =
@@ -877,14 +871,14 @@
                     var newPriceEl = card.querySelector('[data-field="contract_price"]');
                     if (newPriceEl && contractPrice) {
                         newPriceEl.dataset.rawValue = contractPrice;
-                        newPriceEl.textContent = '$' + Number(contractPrice).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                        newPriceEl.textContent = new Intl.NumberFormat('{{ Fmt::jsLocale() }}', { style: 'currency', currency: '{{ Fmt::currencyCode() }}', maximumFractionDigits: 0 }).format(Number(contractPrice));
                     }
 
                     // Update fee display (assignment_fee or total_commission based on mode)
                     var newFeeEl = card.querySelector('[data-field="' + feeName + '"]');
                     if (newFeeEl && feeValue) {
                         newFeeEl.dataset.rawValue = feeValue;
-                        newFeeEl.textContent = '$' + Number(feeValue).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+                        newFeeEl.textContent = new Intl.NumberFormat('{{ Fmt::jsLocale() }}', { style: 'currency', currency: '{{ Fmt::currencyCode() }}', maximumFractionDigits: 0 }).format(Number(feeValue));
                     }
 
                     showToast('{{ __("Deal updated successfully") }}', 'success');
