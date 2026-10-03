@@ -440,9 +440,13 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
         Route::resource('campaigns', CampaignController::class);
     });
 
-    // ── Reports: admin ──────────────────────────────────
-    Route::middleware('role:admin')->group(function () {
+    // ── Reports ──────────────────────────────────────────
+    // Saudi brokers can view their own scoped report; wholesale remains admin-only
+    // via the controller guard. Exports stay admin-only.
+    Route::middleware('role:admin,agent,listing_agent,buyers_agent')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    });
+    Route::middleware('role:admin')->group(function () {
         Route::get('/reports/export/leads-by-source', [ReportController::class, 'exportLeadsBySource'])->name('reports.exportLeadsBySource');
         Route::get('/reports/export/top-agents', [ReportController::class, 'exportTopAgents'])->name('reports.exportTopAgents');
         Route::get('/reports/export/funnel', [ReportController::class, 'exportFunnel'])->name('reports.exportFunnel');
