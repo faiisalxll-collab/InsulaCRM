@@ -19,7 +19,8 @@ class DealOffer extends Model
     ];
 
     public const FINANCING_TYPES = [
-        'cash' => 'Cash',
+        'cash' => 'نقدي',
+        'bank_finance' => 'تمويل بنكي',
         'conventional' => 'Conventional',
         'fha' => 'FHA',
         'va' => 'VA',
