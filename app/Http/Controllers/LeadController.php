@@ -121,7 +121,11 @@ class LeadController extends Controller
                     ->where('tenant_id', auth()->user()->tenant_id)
                     ->firstOrFail();
 
-                if (! auth()->user()->isAdmin() && (int) $targetAgent->id !== (int) auth()->id()) {
+                if (
+                    \App\Services\BusinessModeService::isRealEstate()
+                    && ! auth()->user()->isAdmin()
+                    && (int) $targetAgent->id !== (int) auth()->id()
+                ) {
                     abort(403);
                 }
 
