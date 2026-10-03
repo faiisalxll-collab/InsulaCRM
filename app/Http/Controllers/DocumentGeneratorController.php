@@ -23,6 +23,7 @@ class DocumentGeneratorController extends Controller
      */
     public function create(Deal $deal)
     {
+        $this->ensureLegacyDocumentGenerationAllowed();
         $deal->loadMissing(['lead.property', 'tenant', 'buyerMatches.buyer']);
 
         $templates = DocumentTemplate::orderBy('name')->get();
@@ -40,6 +41,8 @@ class DocumentGeneratorController extends Controller
      */
     public function previewWithDeal(Request $request, Deal $deal)
     {
+        $this->ensureLegacyDocumentGenerationAllowed();
+
         $request->validate([
             'template_id' => 'required|exists:document_templates,id',
         ]);
@@ -59,6 +62,8 @@ class DocumentGeneratorController extends Controller
      */
     public function store(Request $request, Deal $deal)
     {
+        $this->ensureLegacyDocumentGenerationAllowed();
+
         $request->validate([
             'template_id' => 'required|exists:document_templates,id',
             'name' => 'nullable|string|max:255',
@@ -143,6 +148,7 @@ class DocumentGeneratorController extends Controller
      */
     public function investorPacket(Deal $deal)
     {
+        $this->ensureLegacyDocumentGenerationAllowed();
         $this->authorize('view', $deal);
 
         $deal->load(['lead.property']);
@@ -219,4 +225,14 @@ class DocumentGeneratorController extends Controller
 
         return response($printHtml);
     }
+
+    private function ensureLegacyDocumentGenerationAllowed(): void
+    {
+        abort_if(
+            \App\Services\BusinessModeService::isRealEstate(),
+            404,
+            'Legacy document generation is not available in Saudi V1.'
+        );
+    }
+
 }
