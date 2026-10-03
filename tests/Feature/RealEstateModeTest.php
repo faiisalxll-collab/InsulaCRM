@@ -123,7 +123,7 @@ class RealEstateModeTest extends TestCase
 
         $response = $this->get("/pipeline/{$deal->id}");
         $response->assertStatus(200);
-        $response->assertSee('Transaction Checklist');
+        $response->assertSee('خطوات الإغلاق');
     }
 
     public function test_realestate_deal_shows_offers_section(): void
