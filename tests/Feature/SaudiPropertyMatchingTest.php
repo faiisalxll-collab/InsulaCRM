@@ -178,4 +178,95 @@ class SaudiPropertyMatchingTest extends TestCase
         ]);
     }
 
+
+    public function test_closing_request_removes_existing_matches(): void
+    {
+        $admin = $this->createTenantWithAdmin();
+        $tenant = $this->tenant;
+        $lead = $this->createLead();
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'lead_id' => $lead->id,
+            'address' => 'Active villa',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'zip_code' => '14962',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'district' => 'Namar',
+            'list_price' => 1500000,
+            'listing_status' => 'active',
+        ]);
+
+        $request = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'lead_id' => $lead->id,
+            'agent_id' => $admin->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'Riyadh',
+            'districts' => ['Namar'],
+            'max_price' => 1800000,
+            'status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('property_matches', [
+            'property_request_id' => $request->id,
+            'property_id' => $property->id,
+        ]);
+
+        $request->update(['status' => 'closed']);
+
+        $this->assertDatabaseMissing('property_matches', [
+            'property_request_id' => $request->id,
+            'property_id' => $property->id,
+        ]);
+    }
+
+    public function test_sold_property_removes_existing_matches(): void
+    {
+        $admin = $this->createTenantWithAdmin();
+        $tenant = $this->tenant;
+        $lead = $this->createLead();
+
+        $request = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'lead_id' => $lead->id,
+            'agent_id' => $admin->id,
+            'transaction_type' => 'rent',
+            'property_type' => 'apartment',
+            'city' => 'Riyadh',
+            'districts' => ['Al Malqa'],
+            'max_price' => 120000,
+            'status' => 'active',
+        ]);
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id,
+            'lead_id' => $lead->id,
+            'address' => 'Rental apartment',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'zip_code' => '13521',
+            'property_type' => 'apartment',
+            'transaction_type' => 'rent',
+            'district' => 'al malqa',
+            'list_price' => 100000,
+            'listing_status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('property_matches', [
+            'property_request_id' => $request->id,
+            'property_id' => $property->id,
+        ]);
+
+        $property->update(['listing_status' => 'withdrawn']);
+
+        $this->assertDatabaseMissing('property_matches', [
+            'property_request_id' => $request->id,
+            'property_id' => $property->id,
+        ]);
+    }
+
 }
