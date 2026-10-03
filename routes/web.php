@@ -295,6 +295,10 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
         Route::get('/properties/{property}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
         Route::put('/properties/{property}', [PropertyController::class, 'update'])->name('properties.update');
         Route::delete('/properties/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
+        Route::post('/properties/{property}/photos', [PropertyController::class, 'uploadPhotos'])
+            ->name('properties.photos.upload');
+        Route::delete('/properties/{property}/photos/{photo}', [PropertyController::class, 'deletePhoto'])
+            ->name('properties.photos.delete');
     });
 
     // ── Properties: admin, agent, acquisition_agent, field_scout, listing_agent, buyers_agent ──
