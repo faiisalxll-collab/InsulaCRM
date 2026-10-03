@@ -53,6 +53,8 @@ class Deal extends Model
     protected $fillable = [
         'tenant_id',
         'lead_id',
+        'property_id',
+        'property_request_id',
         'agent_id',
         'title',
         'stage',
@@ -106,6 +108,16 @@ class Deal extends Model
     public function lead()
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function property()
+    {
+        return $this->belongsTo(Property::class);
+    }
+
+    public function propertyRequest()
+    {
+        return $this->belongsTo(PropertyRequest::class);
     }
 
     public function agent()
