@@ -286,6 +286,15 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
         Route::delete('/leads/{lead}/photos/{photo}', [LeadController::class, 'deletePhoto'])->name('leads.photos.delete');
     });
 
+    // ── Saudi property management ───────────────────────────────
+    Route::middleware(['role:admin,agent,listing_agent,buyers_agent', 'mode:realestate'])->group(function () {
+        Route::get('/properties/create', [PropertyController::class, 'create'])->name('properties.create');
+        Route::post('/properties/create', [PropertyController::class, 'standaloneStore'])->name('properties.manage.store');
+        Route::get('/properties/{property}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
+        Route::put('/properties/{property}', [PropertyController::class, 'update'])->name('properties.update');
+        Route::delete('/properties/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
+    });
+
     // ── Properties: admin, agent, acquisition_agent, field_scout, listing_agent, buyers_agent ──
     Route::middleware('role:admin,agent,acquisition_agent,field_scout,listing_agent,buyers_agent')->group(function () {
         Route::get('/properties', [PropertyController::class, 'index'])->name('properties.index');
