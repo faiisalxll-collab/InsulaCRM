@@ -14,10 +14,25 @@ class DealRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $base = [
             'title' => 'sometimes|required|string|max:255',
             'stage' => 'sometimes|required|in:' . implode(',', array_keys(Deal::stages())),
             'contract_price' => 'nullable|numeric|min:0',
+            'contract_date' => 'nullable|date',
+            'closing_date' => 'nullable|date',
+            'notes' => 'nullable|string',
+        ];
+
+        if (\App\Services\BusinessModeService::isRealEstate()) {
+            return $base + [
+                'total_commission' => 'nullable|numeric|min:0',
+                'brokerage_split_pct' => 'nullable|numeric|min:0|max:100',
+                'commission_status' => 'nullable|in:pending,due,paid',
+                'commission_paid_at' => 'nullable|date',
+            ];
+        }
+
+        return $base + [
             'assignment_fee' => 'nullable|numeric|min:0',
             'earnest_money' => 'nullable|numeric|min:0',
             'inspection_period_days' => 'nullable|integer|min:0',
@@ -30,10 +45,7 @@ class DealRequest extends FormRequest
             'mls_number' => 'nullable|string|max:30',
             'listing_date' => 'nullable|date',
             'days_on_market' => 'nullable|integer|min:0',
-            'contract_date' => 'nullable|date',
-            'closing_date' => 'nullable|date',
             'due_diligence_end_date' => 'nullable|date',
-            'notes' => 'nullable|string',
         ];
     }
 }
