@@ -280,6 +280,16 @@ class TenantApiIsolationTest extends TestCase
         ]);
     }
 
+
+    public function test_tenant_scope_fails_closed_without_http_tenant_context(): void
+    {
+        $this->makeLead($this->officeA, 'ShouldNot', 'Leak');
+
+        // No authenticated user and no API tenant attribute: tenant-scoped
+        // models must return no rows rather than silently becoming unscoped.
+        $this->assertSame(0, Lead::query()->count());
+    }
+
     private function makeLead(Tenant $tenant, string $firstName, string $lastName): Lead
     {
         return Lead::withoutGlobalScopes()->create([
