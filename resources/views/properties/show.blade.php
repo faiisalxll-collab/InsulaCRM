@@ -14,6 +14,16 @@
         <div class="card mb-3">
             <div class="card-header">
                 <h3 class="card-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تفاصيل العقار' : __('Property Details') }}</h3>
+                @if(($businessMode ?? 'wholesale') === 'realestate' && auth()->user()->can('update', $property))
+                <div class="card-actions d-flex gap-2">
+                    <a href="{{ route('properties.edit', $property) }}" class="btn btn-sm btn-primary">تعديل العقار</a>
+                    <form method="POST" action="{{ route('properties.destroy', $property) }}" onsubmit="return confirm('حذف العقار نهائيًا؟')">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn btn-sm btn-outline-danger">حذف</button>
+                    </form>
+                </div>
+                @endif
             </div>
             <div class="card-body">
                 <div class="datagrid">
