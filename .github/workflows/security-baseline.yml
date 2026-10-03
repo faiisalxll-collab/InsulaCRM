@@ -45,3 +45,5 @@ jobs:
 # security baseline revision: buyers-activities
 
 # security baseline revision: fail-closed-tenant-scope
+
+# security baseline revision: platform-backup-boundary
