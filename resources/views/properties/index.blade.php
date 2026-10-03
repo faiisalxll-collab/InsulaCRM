@@ -11,6 +11,7 @@
         'active' => 'نشط',
         'pending' => 'معلّق',
         'sold' => 'مباع',
+        'leased' => 'مؤجر',
         'withdrawn' => 'مسحوب',
         'expired' => 'منتهي',
     ];
@@ -18,6 +19,7 @@
         'active' => 'bg-green-lt',
         'pending' => 'bg-yellow-lt',
         'sold' => 'bg-blue-lt',
+        'leased' => 'bg-purple-lt',
         'withdrawn' => 'bg-secondary-lt',
         'expired' => 'bg-red-lt',
     ];
