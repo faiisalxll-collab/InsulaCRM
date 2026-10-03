@@ -22,6 +22,10 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
+        if (! \App\Services\BusinessModeService::isRealEstate() && ! auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
         if (\App\Services\BusinessModeService::isRealEstate()) {
             return $this->saudiRealEstateReport($request);
         }
