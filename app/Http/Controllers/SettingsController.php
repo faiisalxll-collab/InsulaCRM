@@ -290,26 +290,11 @@ class SettingsController extends Controller
     public function backupDownload(string $filename)
     {
         abort(403, 'Database backups are restricted to platform operators.');
-
-        $filepath = $this->backupService->path($filename);
-        if (! $filepath) {
-            abort(404);
-        }
-
-        return response()->download($filepath);
     }
 
     public function backupDelete(string $filename)
     {
         abort(403, 'Database backups are restricted to platform operators.');
-
-        if (! $this->backupService->delete($filename)) {
-            return response()->json(['success' => false, 'message' => __('File not found.')], 404);
-        }
-
-        AuditLog::log('backup.deleted', auth()->user()->tenant, ['file' => basename($filename)]);
-
-        return response()->json(['success' => true, 'message' => __('Backup deleted.'), 'backups' => $this->backupService->list()]);
     }
 
     public function apiLogs()
