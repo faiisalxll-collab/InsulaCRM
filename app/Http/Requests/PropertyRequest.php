@@ -14,6 +14,19 @@ class PropertyRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! BusinessModeService::isRealEstate() || $this->filled('lead_id')) {
+            return;
+        }
+
+        $routeLead = $this->route('lead');
+
+        if ($routeLead instanceof \App\Models\Lead) {
+            $this->merge(['lead_id' => $routeLead->id]);
+        }
+    }
+
     public function rules(): array
     {
         $propertyTypes = implode(',', CustomFieldService::getValidSlugs('property_type'));
