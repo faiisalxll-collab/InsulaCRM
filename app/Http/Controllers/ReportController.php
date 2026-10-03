@@ -6,6 +6,11 @@ use App\Models\Deal;
 use App\Models\DealBuyerMatch;
 use App\Models\Lead;
 use App\Models\LeadSourceCost;
+use App\Models\Property;
+use App\Models\PropertyMatch;
+use App\Models\PropertyRequest as PropertySearchRequest;
+use App\Models\Showing;
+use App\Models\DealOffer;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +22,10 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
+        if (\App\Services\BusinessModeService::isRealEstate()) {
+            return $this->saudiRealEstateReport($request);
+        }
+
         $from = $request->get('from', now()->subMonths(6)->format('Y-m-d'));
         $to = $request->get('to', now()->format('Y-m-d'));
         $agentId = $request->get('agent_id');
@@ -226,6 +235,155 @@ class ReportController extends Controller
             'topAgents', 'agents', 'from', 'to', 'agentId',
             'pipelineBottleneck', 'funnel', 'leadSourceROI', 'buyerMatchRate', 'teamPerformance',
             'stackDepth', 'conversionTrend', 'leadVelocity', 'agentComparison'
+        ));
+    }
+
+    private function saudiRealEstateReport(Request $request)
+    {
+        $data = $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+            'agent_id' => 'nullable|integer',
+        ]);
+
+        $from = $data['from'] ?? now()->subMonths(3)->format('Y-m-d');
+        $to = $data['to'] ?? now()->format('Y-m-d');
+        $agentId = $data['agent_id'] ?? null;
+        $toEnd = $to.' 23:59:59';
+
+        if ($agentId) {
+            User::assignable(auth()->user()->tenant)->whereKey($agentId)->firstOrFail();
+        }
+
+        $clients = Lead::whereBetween('created_at', [$from, $toEnd]);
+        $properties = Property::whereBetween('created_at', [$from, $toEnd]);
+        $requests = PropertySearchRequest::whereBetween('created_at', [$from, $toEnd]);
+        $matches = PropertyMatch::whereBetween('evaluated_at', [$from, $toEnd]);
+        $showings = Showing::whereBetween('showing_date', [$from, $to]);
+        $offers = DealOffer::whereBetween('created_at', [$from, $toEnd]);
+        $deals = Deal::query();
+
+        if ($agentId) {
+            $clients->where('agent_id', $agentId);
+            $properties->whereHas('lead', fn ($query) => $query->where('agent_id', $agentId));
+            $requests->where('agent_id', $agentId);
+            $matches->whereHas('request', fn ($query) => $query->where('agent_id', $agentId));
+            $showings->where('agent_id', $agentId);
+            $offers->whereHas('deal', fn ($query) => $query->where('agent_id', $agentId));
+            $deals->where('agent_id', $agentId);
+        }
+
+        $closedDealsQuery = (clone $deals)
+            ->where('stage', 'closed_won')
+            ->whereBetween('stage_changed_at', [$from, $toEnd]);
+
+        $newClients = (clone $clients)->count();
+        $newProperties = (clone $properties)->count();
+        $newRequests = (clone $requests)->count();
+        $eligibleMatches = (clone $matches)
+            ->where('status', 'eligible')
+            ->where('hard_constraints_passed', true)
+            ->count();
+        $avgMatchScore = round((float) ((clone $matches)
+            ->where('status', 'eligible')
+            ->where('hard_constraints_passed', true)
+            ->avg('match_score') ?? 0), 1);
+        $showingsCount = (clone $showings)->count();
+        $completedShowings = (clone $showings)->where('status', 'completed')->count();
+        $offersCount = (clone $offers)->count();
+        $acceptedOffers = (clone $offers)->where('status', 'accepted')->count();
+        $closedDeals = (clone $closedDealsQuery)->count();
+        $closedVolume = (float) (clone $closedDealsQuery)->sum('contract_price');
+        $commissionsGenerated = (float) (clone $closedDealsQuery)->sum('total_commission');
+        $commissionsDue = (float) (clone $closedDealsQuery)
+            ->where('commission_status', 'due')
+            ->sum('total_commission');
+        $commissionsPaid = (float) (clone $deals)
+            ->where('commission_status', 'paid')
+            ->whereBetween('commission_paid_at', [$from, $toEnd])
+            ->sum('total_commission');
+
+        $transactionBreakdown = (clone $properties)
+            ->select('transaction_type', DB::raw('count(*) as count'))
+            ->groupBy('transaction_type')
+            ->orderByDesc('count')
+            ->get();
+
+        $propertyTypeBreakdown = (clone $properties)
+            ->select('property_type', DB::raw('count(*) as count'))
+            ->groupBy('property_type')
+            ->orderByDesc('count')
+            ->get();
+
+        $districtBreakdown = (clone $properties)
+            ->whereNotNull('district')
+            ->where('district', '!=', '')
+            ->select('district', DB::raw('count(*) as count'))
+            ->groupBy('district')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get();
+
+        $showingOutcomes = (clone $showings)
+            ->whereNotNull('outcome')
+            ->select('outcome', DB::raw('count(*) as count'))
+            ->groupBy('outcome')
+            ->orderByDesc('count')
+            ->get();
+
+        $dealStages = (clone $deals)
+            ->whereNotIn('stage', ['closed_won', 'closed_lost'])
+            ->select('stage', DB::raw('count(*) as count'))
+            ->groupBy('stage')
+            ->orderByDesc('count')
+            ->get();
+
+        $agentPerformance = collect();
+        if (! $agentId) {
+            $agentPerformance = Deal::where('stage', 'closed_won')
+                ->whereBetween('stage_changed_at', [$from, $toEnd])
+                ->select(
+                    'agent_id',
+                    DB::raw('count(*) as closed_count'),
+                    DB::raw('sum(contract_price) as closed_volume'),
+                    DB::raw('sum(total_commission) as commissions')
+                )
+                ->groupBy('agent_id')
+                ->with('agent')
+                ->orderByDesc('closed_count')
+                ->get();
+        }
+
+        $agents = User::assignable(auth()->user()->tenant)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('reports.saudi', compact(
+            'from',
+            'to',
+            'agentId',
+            'agents',
+            'newClients',
+            'newProperties',
+            'newRequests',
+            'eligibleMatches',
+            'avgMatchScore',
+            'showingsCount',
+            'completedShowings',
+            'offersCount',
+            'acceptedOffers',
+            'closedDeals',
+            'closedVolume',
+            'commissionsGenerated',
+            'commissionsDue',
+            'commissionsPaid',
+            'transactionBreakdown',
+            'propertyTypeBreakdown',
+            'districtBreakdown',
+            'showingOutcomes',
+            'dealStages',
+            'agentPerformance',
         ));
     }
 
