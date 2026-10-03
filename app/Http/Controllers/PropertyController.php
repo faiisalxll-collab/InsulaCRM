@@ -313,6 +313,8 @@ class PropertyController extends Controller
         $property->load(['lead', 'photos.uploader']);
         $property->loadCount([
             'matches as eligible_matches_count' => fn ($query) => $query->where('status', 'eligible'),
+            'showings',
+            'deals',
         ]);
 
         return view('properties.show', [
