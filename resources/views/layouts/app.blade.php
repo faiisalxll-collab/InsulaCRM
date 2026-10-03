@@ -201,6 +201,20 @@
                         </li>
                         @endunless
 
+                        @if(
+                            ($businessMode ?? 'wholesale') === 'realestate'
+                            && in_array(auth()->user()->role?->name, ['admin', 'agent', 'listing_agent', 'buyers_agent'], true)
+                        )
+                        <li class="nav-item {{ request()->is('reports*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('reports.index') }}">
+                                <span class="nav-link-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 19l16 0"/><path d="M7 16l0 -6"/><path d="M12 16l0 -10"/><path d="M17 16l0 -3"/></svg>
+                                </span>
+                                <span class="nav-link-title">التقارير</span>
+                            </a>
+                        </li>
+                        @endif
+
                         @if(($businessMode ?? 'wholesale') !== 'realestate')
                         @unless(auth()->user()->isFieldScout())
                         <li class="nav-item {{ request()->is('activities*') ? 'active' : '' }}">
@@ -252,15 +266,6 @@
                                 <a class="dropdown-item {{ request()->is('audit-log*') ? 'active' : '' }}" href="{{ route('audit-log.index') }}">{{ __('Audit Log') }}</a>
                                 <a class="dropdown-item {{ request()->is('ai-history*') ? 'active' : '' }}" href="{{ route('ai-log.index') }}">{{ __('AI History') }}</a>
                             </div>
-                        </li>
-                        @else
-                        <li class="nav-item {{ request()->is('reports*') ? 'active' : '' }}">
-                            <a class="nav-link" href="{{ route('reports.index') }}">
-                                <span class="nav-link-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 19l16 0"/><path d="M7 16l0 -6"/><path d="M12 16l0 -10"/><path d="M17 16l0 -3"/></svg>
-                                </span>
-                                <span class="nav-link-title">التقارير</span>
-                            </a>
                         </li>
                         @endif
 
