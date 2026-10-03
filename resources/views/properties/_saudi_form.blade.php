@@ -25,7 +25,7 @@
         <select name="lead_id" class="form-select @error('lead_id') is-invalid @enderror" required>
             <option value="">اختر العميل</option>
             @foreach($leads as $lead)
-                <option value="{{ $lead->id }}" @selected((string) old('lead_id', $property->lead_id ?? '') === (string) $lead->id)>
+                <option value="{{ $lead->id }}" @selected((string) old('lead_id', $property->lead_id ?? request('lead_id', '')) === (string) $lead->id)>
                     {{ $lead->first_name }} {{ $lead->last_name }}{{ $lead->phone ? ' — '.$lead->phone : '' }}
                 </option>
             @endforeach
