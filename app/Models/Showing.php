@@ -8,17 +8,17 @@ use Illuminate\Database\Eloquent\Model;
 class Showing extends Model
 {
     public const STATUSES = [
-        'scheduled' => 'Scheduled',
-        'completed' => 'Completed',
-        'cancelled' => 'Cancelled',
-        'no_show'   => 'No Show',
+        'scheduled' => 'مجدولة',
+        'completed' => 'مكتملة',
+        'cancelled' => 'ملغاة',
+        'no_show'   => 'لم يحضر',
     ];
 
     public const OUTCOMES = [
-        'interested'            => 'Interested',
-        'not_interested'        => 'Not Interested',
-        'made_offer'            => 'Made Offer',
-        'needs_second_showing'  => 'Needs Second Showing',
+        'interested'            => 'مهتم',
+        'not_interested'        => 'غير مهتم',
+        'made_offer'            => 'قدم عرضًا',
+        'needs_second_showing'  => 'يحتاج معاينة ثانية',
     ];
 
     protected $fillable = [
