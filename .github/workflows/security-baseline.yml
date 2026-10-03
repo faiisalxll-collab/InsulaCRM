@@ -47,3 +47,5 @@ jobs:
 # security baseline revision: fail-closed-tenant-scope
 
 # security baseline revision: platform-backup-boundary
+
+# security baseline revision: backups-roles-idor
