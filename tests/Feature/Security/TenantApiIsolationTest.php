@@ -29,6 +29,9 @@ class TenantApiIsolationTest extends TestCase
             'tenant_id' => $this->officeB->id,
             'lead_id' => $leadB->id,
             'address' => 'Office B Property',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'zip_code' => '12345',
         ]);
 
         $this->getJson("/api/v1/properties/{$property->id}", $this->headersFor($this->officeA))
@@ -44,11 +47,17 @@ class TenantApiIsolationTest extends TestCase
             'tenant_id' => $this->officeA->id,
             'lead_id' => $leadA->id,
             'address' => 'Office A Property',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'zip_code' => '12345',
         ]);
         Property::withoutGlobalScopes()->create([
             'tenant_id' => $this->officeB->id,
             'lead_id' => $leadB->id,
             'address' => 'Office B Property',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'zip_code' => '12345',
         ]);
 
         $response = $this->getJson('/api/v1/properties', $this->headersFor($this->officeA))
@@ -65,6 +74,9 @@ class TenantApiIsolationTest extends TestCase
             'tenant_id' => $this->officeB->id,
             'lead_id' => $leadB->id,
             'address' => 'Office B Original',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'zip_code' => '12345',
         ]);
 
         $this->putJson(
@@ -77,6 +89,9 @@ class TenantApiIsolationTest extends TestCase
             'id' => $property->id,
             'tenant_id' => $this->officeB->id,
             'address' => 'Office B Original',
+            'city' => 'Riyadh',
+            'state' => 'Riyadh',
+            'zip_code' => '12345',
         ]);
     }
 
