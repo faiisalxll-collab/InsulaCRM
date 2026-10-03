@@ -54,6 +54,8 @@ Verified on Saudi V1 code HEAD `db97b2867175adeea5f3a6fa2b585acb0d91f91a` by Git
 
 ## Pilot deployment gate
 
+Execution guide: `docs/SAUDI_V1_PILOT_RUNBOOK.md`.
+
 Before the first real office receives access:
 
 1. Back up the target database and uploaded files.
