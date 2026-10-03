@@ -49,10 +49,14 @@ class DealPolicy
 
     private function ownsOrCanManage(User $user, Deal $deal): bool
     {
+        if ((int) $user->tenant_id !== (int) $deal->tenant_id) {
+            return false;
+        }
+
         if ($user->isAdmin() || $user->isDispositionAgent()) {
             return true;
         }
 
-        return $user->isAgent() && $deal->agent_id === $user->id;
+        return $user->isAgent() && (int) $deal->agent_id === (int) $user->id;
     }
 }
