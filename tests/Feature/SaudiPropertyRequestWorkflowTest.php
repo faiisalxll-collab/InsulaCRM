@@ -56,6 +56,8 @@ class SaudiPropertyRequestWorkflowTest extends TestCase
             'status' => 'active',
         ]);
 
+        $response->assertSessionHasNoErrors();
+
         $request = PropertyRequest::withoutGlobalScopes()->latest('id')->firstOrFail();
 
         $response->assertRedirect(route('property-requests.show', $request));
