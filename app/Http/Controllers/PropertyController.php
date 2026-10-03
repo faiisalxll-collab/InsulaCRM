@@ -186,10 +186,12 @@ class PropertyController extends Controller
             $data['maximum_allowable_offer'] = ($data['after_repair_value'] * 0.70) - $data['repair_estimate'];
         }
 
-        $property = Property::updateOrCreate(
-            ['lead_id' => $lead->id],
-            $data
-        );
+        $property = \App\Services\BusinessModeService::isRealEstate()
+            ? Property::create($data)
+            : Property::updateOrCreate(
+                ['lead_id' => $lead->id],
+                $data
+            );
 
         AuditLog::log('property.created', $property);
 
