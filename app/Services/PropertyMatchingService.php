@@ -104,16 +104,21 @@ class PropertyMatchingService
             ->where('tenant_id', $request->tenant_id)
             ->where('transaction_type', $request->transaction_type)
             ->where('property_type', $request->property_type)
-            ->whereRaw('LOWER(city) = ?', [$this->normalize($request->city)]);
+            ->whereRaw('LOWER(TRIM(city)) = ?', [$this->normalize($request->city)]);
 
         $statuses = config('property_matching.active_property_statuses', []);
         if ($statuses !== []) {
             $query->whereIn('listing_status', $statuses);
         }
 
-        $districts = array_values(array_filter($request->districts ?? []));
+        $districts = $this->normalizedList($request->districts);
         if ($districts !== []) {
-            $query->whereIn('district', $districts);
+            $query->where(function (Builder $q) use ($districts) {
+                foreach ($districts as $index => $district) {
+                    $method = $index === 0 ? 'whereRaw' : 'orWhereRaw';
+                    $q->{$method}('LOWER(TRIM(district)) = ?', [$district]);
+                }
+            });
         }
 
         if ($request->max_price !== null) {
@@ -153,7 +158,7 @@ class PropertyMatchingService
             ->where('tenant_id', $property->tenant_id)
             ->where('transaction_type', $property->transaction_type)
             ->where('property_type', $property->property_type)
-            ->whereRaw('LOWER(city) = ?', [$this->normalize($property->city)])
+            ->whereRaw('LOWER(TRIM(city)) = ?', [$this->normalize($property->city)])
             ->whereIn('status', config('property_matching.active_request_statuses', ['active']));
 
         if ($price !== null) {
@@ -179,17 +184,59 @@ class PropertyMatchingService
 
     public function refreshForRequest(PropertyRequest $request): Collection
     {
-        return $this->candidatesForRequest($request)->get()->map(
+        if (! in_array($request->status, config('property_matching.active_request_statuses', ['active']), true)) {
+            PropertyMatch::withoutGlobalScopes()
+                ->where('tenant_id', $request->tenant_id)
+                ->where('property_request_id', $request->id)
+                ->delete();
+
+            return collect();
+        }
+
+        $properties = $this->candidatesForRequest($request)->get();
+        $propertyIds = $properties->pluck('id')->all();
+
+        $stale = PropertyMatch::withoutGlobalScopes()
+            ->where('tenant_id', $request->tenant_id)
+            ->where('property_request_id', $request->id);
+
+        $propertyIds === []
+            ? $stale->delete()
+            : $stale->whereNotIn('property_id', $propertyIds)->delete();
+
+        return $properties->map(
             fn (Property $property) => $this->persist($request, $property)
         );
     }
 
     public function refreshForProperty(Property $property): Collection
     {
-        return $this->candidatesForProperty($property)->get()->filter(function (PropertyRequest $request) use ($property) {
+        if (! in_array($property->listing_status, config('property_matching.active_property_statuses', ['active']), true)) {
+            PropertyMatch::withoutGlobalScopes()
+                ->where('tenant_id', $property->tenant_id)
+                ->where('property_id', $property->id)
+                ->delete();
+
+            return collect();
+        }
+
+        $requests = $this->candidatesForProperty($property)->get()->filter(function (PropertyRequest $request) use ($property) {
             $districts = $this->normalizedList($request->districts);
+
             return $districts === [] || in_array($this->normalize($property->district), $districts, true);
-        })->map(
+        })->values();
+
+        $requestIds = $requests->pluck('id')->all();
+
+        $stale = PropertyMatch::withoutGlobalScopes()
+            ->where('tenant_id', $property->tenant_id)
+            ->where('property_id', $property->id);
+
+        $requestIds === []
+            ? $stale->delete()
+            : $stale->whereNotIn('property_request_id', $requestIds)->delete();
+
+        return $requests->map(
             fn (PropertyRequest $request) => $this->persist($request, $property)
         );
     }
@@ -217,37 +264,59 @@ class PropertyMatchingService
     {
         $rejections = [];
 
-        if ($request->transaction_type !== $property->transaction_type) $rejections[] = 'transaction_type';
-        if ($request->property_type !== $property->property_type) $rejections[] = 'property_type';
-        if ($this->normalize($request->city) !== $this->normalize($property->city)) $rejections[] = 'city';
+        if ($request->transaction_type !== $property->transaction_type) {
+            $rejections[] = 'transaction_type';
+        }
+        if ($request->property_type !== $property->property_type) {
+            $rejections[] = 'property_type';
+        }
+        if ($this->normalize($request->city) !== $this->normalize($property->city)) {
+            $rejections[] = 'city';
+        }
 
         $districts = $this->normalizedList($request->districts);
-        if ($districts !== [] && !in_array($this->normalize($property->district), $districts, true)) $rejections[] = 'district';
+        if ($districts !== [] && ! in_array($this->normalize($property->district), $districts, true)) {
+            $rejections[] = 'district';
+        }
 
         $price = $this->propertyPrice($property);
-        if ($request->max_price !== null && ($price === null || $price > (float) $request->max_price)) $rejections[] = 'max_price';
-        if ($request->min_price !== null && ($price === null || $price < (float) $request->min_price)) $rejections[] = 'min_price';
-        if ($request->min_area_sqm !== null && ($property->area_sqm === null || (float) $property->area_sqm < (float) $request->min_area_sqm)) $rejections[] = 'min_area';
-        if ($request->finance_required && $property->finance_eligible !== true) $rejections[] = 'finance';
+        if ($request->max_price !== null && ($price === null || $price > (float) $request->max_price)) {
+            $rejections[] = 'max_price';
+        }
+        if ($request->min_price !== null && ($price === null || $price < (float) $request->min_price)) {
+            $rejections[] = 'min_price';
+        }
+        if ($request->min_area_sqm !== null && ($property->area_sqm === null || (float) $property->area_sqm < (float) $request->min_area_sqm)) {
+            $rejections[] = 'min_area';
+        }
+        if ($request->finance_required && $property->finance_eligible !== true) {
+            $rejections[] = 'finance';
+        }
 
         return $rejections;
     }
 
     private function scoreOptionalMinimum($actual, $preferredMinimum, int $weight, string $reason, array &$reasons, array &$warnings): int
     {
-        if ($preferredMinimum === null) return $weight;
+        if ($preferredMinimum === null) {
+            return $weight;
+        }
+
         if ($actual !== null && (float) $actual >= (float) $preferredMinimum) {
             $reasons[] = $reason;
+
             return $weight;
         }
 
         $warnings[] = $reason.'_preference_not_met';
+
         return 0;
     }
 
     private function propertyPrice(Property $property): ?float
     {
         $price = $property->list_price ?? $property->asking_price;
+
         return $price === null ? null : (float) $price;
     }
 
