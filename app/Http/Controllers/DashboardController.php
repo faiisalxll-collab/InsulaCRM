@@ -4,8 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Deal;
 use App\Models\Lead;
+use App\Models\Property;
+use App\Models\PropertyMatch;
+use App\Models\PropertyRequest;
+use App\Models\Showing;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\BusinessModeService;
 use App\Services\DashboardWidgetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +27,10 @@ class DashboardController extends Controller
         // Field scouts get a simplified dashboard with only the property submission form
         if ($user->isFieldScout()) {
             return view('dashboard.field-scout');
+        }
+
+        if (BusinessModeService::isRealEstate($user->tenant)) {
+            return $this->saudiRealEstateDashboard($user);
         }
 
         $leadQuery = Lead::query();
@@ -97,6 +106,83 @@ class DashboardController extends Controller
             'feesThisMonth', 'totalPipelineValue', 'hotLeads', 'overdueTasks',
             'upcomingTasks', 'recentLeads', 'pipelineBottleneck', 'teamPerformance',
             'activeWidgets'
+        ));
+    }
+
+    private function saudiRealEstateDashboard(User $user)
+    {
+        $properties = Property::query();
+        $requests = PropertyRequest::query();
+        $matches = PropertyMatch::query();
+        $showings = Showing::query();
+        $deals = Deal::query();
+
+        if (! $user->isAdmin()) {
+            $properties->whereHas('lead', fn ($query) => $query->where('agent_id', $user->id));
+            $requests->where('agent_id', $user->id);
+            $matches->whereHas('request', fn ($query) => $query->where('agent_id', $user->id));
+            $showings->where('agent_id', $user->id);
+            $deals->where('agent_id', $user->id);
+        }
+
+        $activeProperties = (clone $properties)->where('listing_status', 'active')->count();
+        $activeRequests = (clone $requests)->where('status', 'active')->count();
+        $eligibleMatches = (clone $matches)
+            ->where('status', 'eligible')
+            ->where('hard_constraints_passed', true)
+            ->count();
+        $todayShowings = (clone $showings)
+            ->whereDate('showing_date', now()->toDateString())
+            ->whereNotIn('status', ['cancelled', 'no_show'])
+            ->count();
+        $activeDeals = (clone $deals)
+            ->whereNotIn('stage', ['closed_won', 'closed_lost'])
+            ->count();
+        $closedThisMonth = (clone $deals)
+            ->where('stage', 'closed_won')
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
+            ->count();
+        $commissionDue = (clone $deals)
+            ->where('commission_status', 'due')
+            ->sum('total_commission');
+
+        $topMatches = (clone $matches)
+            ->with(['property', 'request.lead'])
+            ->where('status', 'eligible')
+            ->where('hard_constraints_passed', true)
+            ->orderByDesc('match_score')
+            ->orderByDesc('evaluated_at')
+            ->limit(6)
+            ->get();
+
+        $upcomingShowings = (clone $showings)
+            ->with(['property', 'lead', 'propertyRequest.lead'])
+            ->whereDate('showing_date', '>=', now()->toDateString())
+            ->whereNotIn('status', ['cancelled', 'no_show'])
+            ->orderBy('showing_date')
+            ->orderBy('showing_time')
+            ->limit(6)
+            ->get();
+
+        $openDeals = (clone $deals)
+            ->with(['property', 'propertyRequest.lead', 'agent'])
+            ->whereNotIn('stage', ['closed_won', 'closed_lost'])
+            ->latest('stage_changed_at')
+            ->limit(6)
+            ->get();
+
+        return view('dashboard.saudi', compact(
+            'activeProperties',
+            'activeRequests',
+            'eligibleMatches',
+            'todayShowings',
+            'activeDeals',
+            'closedThisMonth',
+            'commissionDue',
+            'topMatches',
+            'upcomingShowings',
+            'openDeals',
         ));
     }
 
