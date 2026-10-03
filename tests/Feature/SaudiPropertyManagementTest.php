@@ -204,8 +204,18 @@ class SaudiPropertyManagementTest extends TestCase
             'business_mode' => 'realestate',
         ]);
 
+        $foreignLead = \App\Models\Lead::withoutGlobalScopes()->create([
+            'tenant_id' => $foreignTenant->id,
+            'first_name' => 'مالك',
+            'last_name' => 'مكتب آخر',
+            'lead_source' => 'referral',
+            'status' => 'new',
+            'temperature' => 'cold',
+        ]);
+
         $foreignProperty = Property::withoutGlobalScopes()->create([
             'tenant_id' => $foreignTenant->id,
+            'lead_id' => $foreignLead->id,
             'address' => 'عقار مكتب آخر',
             'city' => 'الرياض',
             'property_type' => 'villa',
