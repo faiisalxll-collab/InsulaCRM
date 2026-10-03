@@ -150,6 +150,15 @@ class PropertyController extends Controller
     {
         $this->authorize('delete', $property);
 
+        if (
+            \App\Services\BusinessModeService::isRealEstate()
+            && ($property->showings()->exists() || $property->deals()->exists())
+        ) {
+            return redirect()
+                ->route('properties.show', $property)
+                ->with('error', 'لا يمكن حذف عقار دخل في معاينة أو صفقة. غيّر حالة العرض للحفاظ على سجل المكتب.');
+        }
+
         AuditLog::log('property.deleted', $property);
         $property->delete();
 
