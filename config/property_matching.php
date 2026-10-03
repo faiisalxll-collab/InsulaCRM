@@ -12,7 +12,7 @@ return [
         'finance' => 5,
     ],
 
-    'active_property_statuses' => ['active', 'listed'],
+    'active_property_statuses' => ['active'],
     'active_request_statuses' => ['active'],
 
     // Keep synchronous for V1. The service boundary is intentionally queue-ready.
