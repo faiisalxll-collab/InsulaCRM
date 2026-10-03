@@ -234,14 +234,13 @@
     @include('properties._photos', ['property' => $property])
 @endif
 
-{{-- ARV / CMA Worksheet --}}
+{{-- Legacy valuation worksheets stay in wholesale. Saudi V1 uses stored price,
+     price-per-sqm and deterministic request matching only. --}}
 @if($businessMode === 'wholesale')
 @include('properties._arv_worksheet', ['property' => $property])
-@else
-@include('properties._cma_worksheet', ['property' => $property])
 @endif
 
-@if(auth()->user()->tenant->ai_enabled)
+@if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled)
 <div class="modal modal-blur fade" id="prop-ai-modal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -270,7 +269,7 @@
 @endif
 
 @push('scripts')
-@if(auth()->user()->tenant->ai_enabled)
+@if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled)
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var propId = {{ $property->id }};
