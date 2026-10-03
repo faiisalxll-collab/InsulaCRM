@@ -264,6 +264,37 @@ class TenantApiIsolationTest extends TestCase
             ->assertDontSee('cross-tenant-secret@example.test');
     }
 
+
+    public function test_web_activity_mutation_rejects_another_office_activity(): void
+    {
+        $role = Role::where('name', 'admin')->firstOrFail();
+        $adminA = User::factory()->create([
+            'tenant_id' => $this->officeA->id,
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+        $agentB = User::factory()->create([
+            'tenant_id' => $this->officeB->id,
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+        $activity = Activity::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeB->id,
+            'agent_id' => $agentB->id,
+            'type' => 'note',
+            'subject' => 'Office B private activity',
+        ]);
+
+        $this->actingAs($adminA)
+            ->delete("/activities/{$activity->id}")
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('activities', [
+            'id' => $activity->id,
+            'tenant_id' => $this->officeB->id,
+        ]);
+    }
+
     private function makeLead(Tenant $tenant, string $firstName, string $lastName): Lead
     {
         return Lead::withoutGlobalScopes()->create([
