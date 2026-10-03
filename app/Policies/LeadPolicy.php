@@ -49,6 +49,10 @@ class LeadPolicy
 
     private function ownsOrCanManage(User $user, Lead $lead): bool
     {
+        if ((int) $user->tenant_id !== (int) $lead->tenant_id) {
+            return false;
+        }
+
         if (! $user->canManageLeads()) {
             return false;
         }
@@ -57,6 +61,6 @@ class LeadPolicy
             return true;
         }
 
-        return $lead->agent_id === $user->id;
+        return (int) $lead->agent_id === (int) $user->id;
     }
 }
