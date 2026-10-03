@@ -20,7 +20,8 @@ class PropertyController extends Controller
     {
         $this->authorize('viewAny', Property::class);
 
-        $query = Property::with('lead');
+        $query = Property::with('lead')
+            ->withCount(['matches as eligible_matches_count' => fn ($q) => $q->where('status', 'eligible')]);
 
         if (auth()->user()->isAgent()) {
             $query->whereHas('lead', function ($q) {
