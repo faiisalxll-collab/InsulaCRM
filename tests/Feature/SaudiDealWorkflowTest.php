@@ -797,4 +797,18 @@ class SaudiDealWorkflowTest extends TestCase
             ->assertSee('PDF, JPG, PNG. Max 10MB.');
     }
 
+
+    public function test_saudi_pipeline_hides_legacy_ai_even_when_tenant_ai_is_enabled(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+        $this->tenant->update(['ai_enabled' => true]);
+
+        $this->get(route('pipeline'))
+            ->assertOk()
+            ->assertDontSee('AI Deal Analysis')
+            ->assertDontSee('AI Stage Advisor')
+            ->assertDontSee('AI Assistant')
+            ->assertDontSee('AI Buyer Outreach Draft');
+    }
+
 }
