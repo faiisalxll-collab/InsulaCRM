@@ -457,4 +457,51 @@ class SaudiDealWorkflowTest extends TestCase
         $this->assertSame('active', $propertyRequest->fresh()->status);
     }
 
+
+    public function test_ajax_deal_panel_uses_linked_property_and_request_client(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار الصفقة الصحيح',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        $deal = Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $property->id,
+            'property_request_id' => $propertyRequest->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة AJAX',
+            'stage' => 'offer_received',
+        ]);
+
+        $this->getJson(route('deals.show', $deal), [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ])
+            ->assertOk()
+            ->assertJsonPath('property.id', $property->id)
+            ->assertJsonPath('property.address', 'عقار الصفقة الصحيح')
+            ->assertJsonPath('property_request.lead.id', $client->id);
+    }
+
 }
