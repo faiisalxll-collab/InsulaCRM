@@ -11,6 +11,7 @@ use App\Models\Deal;
 use App\Models\DealDocument;
 use App\Models\DealOffer;
 use App\Models\Role;
+use App\Models\Showing;
 use App\Models\TransactionChecklist;
 use App\Models\User;
 use App\Notifications\BuyerMatchFound;
@@ -26,7 +27,7 @@ class DealController extends Controller
     {
         $this->authorize('viewAny', Deal::class);
 
-        $query = Deal::with(['lead.property', 'agent']);
+        $query = Deal::with(['lead.property', 'property', 'propertyRequest.lead', 'agent']);
 
         if (auth()->user()->isAgent()) {
             $query->where('agent_id', auth()->id());
@@ -173,10 +174,57 @@ class DealController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function startFromShowing(Showing $showing)
+    {
+        $this->authorize('create', Deal::class);
+        $this->authorize('update', $showing);
+
+        $showing->load(['property.lead', 'propertyRequest.lead']);
+
+        $property = $showing->property;
+        $propertyRequest = $showing->propertyRequest;
+
+        abort_unless($property && $propertyRequest, 422, 'المعاينة يجب أن تكون مرتبطة بعقار وطلب عميل.');
+
+        abort_unless(
+            (int) $property->tenant_id === (int) auth()->user()->tenant_id
+            && (int) $propertyRequest->tenant_id === (int) auth()->user()->tenant_id,
+            403
+        );
+
+        $clientName = trim((string) ($propertyRequest->lead?->full_name ?? 'عميل'));
+
+        $deal = Deal::firstOrCreate(
+            [
+                'tenant_id' => auth()->user()->tenant_id,
+                'property_id' => $property->id,
+                'property_request_id' => $propertyRequest->id,
+            ],
+            [
+                'lead_id' => $property->lead_id,
+                'agent_id' => $propertyRequest->agent_id ?? $showing->agent_id ?? auth()->id(),
+                'title' => 'صفقة '.$clientName.' - '.$property->address,
+                'stage' => 'offer_received',
+            ]
+        );
+
+        if (! $showing->deal_id) {
+            $showing->update(['deal_id' => $deal->id]);
+        }
+
+        if ($deal->wasRecentlyCreated) {
+            AuditLog::log('deal.created_from_showing', $deal);
+        }
+
+        return redirect()
+            ->route('deals.show', $deal)
+            ->with('success', 'تم فتح الصفقة وربطها بالعقار وطلب العميل.');
+    }
+
     public function show(Deal $deal)
     {
         $this->authorize('view', $deal);
-        $deal->load(['lead.property', 'agent', 'documents', 'buyerMatches.buyer', 'activities.agent']);
+        $deal->load(['lead.property', 'property', 'propertyRequest.lead', 'agent', 'documents', 'buyerMatches.buyer', 'activities.agent']);
 
         if (\App\Services\BusinessModeService::isRealEstate()) {
             $deal->load(['offers', 'checklistItems']);
