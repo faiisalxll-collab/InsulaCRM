@@ -3,8 +3,8 @@ name: Security Baseline
 on:
   push:
     branches:
-      - security-baseline
-      - saudi-real-estate
+      - 'security-baseline'
+      - 'saudi-real-estate'
   pull_request:
     branches:
       - main
