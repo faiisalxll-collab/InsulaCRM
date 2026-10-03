@@ -7,6 +7,7 @@ use App\Services\AddressNormalizationService;
 use App\Services\PropertyMatchingService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Property extends Model
 {
@@ -104,6 +105,18 @@ class Property extends Model
                 $property->price_per_sqm = $price !== null && $area > 0
                     ? round((float) $price / $area, 2)
                     : null;
+            }
+        });
+
+        static::deleting(function (Property $property) {
+            $paths = $property->photos()
+                ->withoutGlobalScopes()
+                ->pluck('path')
+                ->filter()
+                ->all();
+
+            if ($paths !== []) {
+                Storage::disk('public')->delete($paths);
             }
         });
 
