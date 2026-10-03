@@ -20,6 +20,7 @@ use App\Services\BuyerScoreService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class DealController extends Controller
 {
@@ -76,6 +77,18 @@ class DealController extends Controller
         $request->validate([
             'stage' => 'required|in:' . implode(',', array_keys(Deal::stages())),
         ]);
+
+        if (
+            \App\Services\BusinessModeService::isRealEstate()
+            && $deal->property_id
+            && $deal->property_request_id
+            && in_array($request->stage, ['under_contract', 'closed_won'], true)
+            && (float) ($deal->contract_price ?? 0) <= 0
+        ) {
+            throw ValidationException::withMessages([
+                'stage' => 'يجب تسجيل قيمة الاتفاق قبل نقل الصفقة إلى الاتفاق أو الإغلاق.',
+            ]);
+        }
 
         $oldStage = $deal->stage;
         $updateData = [
