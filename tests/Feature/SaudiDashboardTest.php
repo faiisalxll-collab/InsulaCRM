@@ -101,4 +101,18 @@ class SaudiDashboardTest extends TestCase
             ->assertSee('Insights');
     }
 
+
+    public function test_saudi_agent_navigation_includes_reports(): void
+    {
+        $this->createTenantWithAdmin($this->realEstateTenant());
+        $agent = $this->createUserWithRole('agent');
+
+        $this->actingAs($agent)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('التقارير')
+            ->assertDontSee('Marketing')
+            ->assertDontSee('Insights');
+    }
+
 }
