@@ -161,6 +161,8 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
 
     // ── Showings (real estate agent mode) ────────────────────────
     Route::middleware(['role:admin,agent,listing_agent,buyers_agent', 'mode:realestate'])->group(function () {
+        Route::post('/showings/{showing}/start-deal', [DealController::class, 'startFromShowing'])
+            ->name('showings.startDeal');
         Route::resource('showings', ShowingController::class);
     });
 
