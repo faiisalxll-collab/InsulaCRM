@@ -387,4 +387,36 @@ class SaudiPropertyManagementTest extends TestCase
         ]);
     }
 
+
+    public function test_saudi_property_page_hides_legacy_cma_and_ai_tools(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+        $this->tenant->update(['ai_enabled' => true]);
+
+        $owner = $this->createLead();
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار واجهة نظيفة',
+            'city' => 'الرياض',
+            'district' => 'نمار',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'area_sqm' => 300,
+            'list_price' => 1500000,
+            'listing_status' => 'active',
+        ]);
+
+        $this->get(route('properties.show', $property))
+            ->assertOk()
+            ->assertSee('سعر المتر')
+            ->assertSee('المطابقات النشطة')
+            ->assertDontSee('Comparable Market Analysis')
+            ->assertDontSee('Price Per Sqft')
+            ->assertDontSee('AI Pricing Strategy')
+            ->assertDontSee('AI Property Description')
+            ->assertDontSee('/comps/', false);
+    }
+
 }
