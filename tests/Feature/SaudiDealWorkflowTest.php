@@ -811,4 +811,118 @@ class SaudiDealWorkflowTest extends TestCase
             ->assertDontSee('AI Buyer Outreach Draft');
     }
 
+
+    public function test_saudi_deal_update_ignores_wholesale_only_fields(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار عزل الحقول',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        $deal = Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $property->id,
+            'property_request_id' => $propertyRequest->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة عزل الحقول',
+            'stage' => 'offer_received',
+        ]);
+
+        $this->patchJson(route('deals.quickUpdate', $deal), [
+            'total_commission' => 25000,
+            'assignment_fee' => 99999,
+            'earnest_money' => 12345,
+            'inspection_period_days' => 45,
+            'mls_number' => 'SHOULD-NOT-SAVE',
+            'listing_commission_pct' => 7,
+            'buyer_commission_pct' => 8,
+            'due_diligence_end_date' => now()->addDays(30)->toDateString(),
+        ])->assertOk();
+
+        $deal->refresh();
+
+        $this->assertSame('25000.00', $deal->total_commission);
+        $this->assertNull($deal->assignment_fee);
+        $this->assertNull($deal->earnest_money);
+        $this->assertNull($deal->inspection_period_days);
+        $this->assertNull($deal->mls_number);
+        $this->assertNull($deal->listing_commission_pct);
+        $this->assertNull($deal->buyer_commission_pct);
+        $this->assertNull($deal->due_diligence_end_date);
+    }
+
+    public function test_saudi_offer_rejects_us_financing_types(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار تمويل سعودي فقط',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        $deal = Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $property->id,
+            'property_request_id' => $propertyRequest->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة تمويل سعودي فقط',
+            'stage' => 'offer_received',
+        ]);
+
+        foreach (['fha', 'va', 'conventional'] as $legacyType) {
+            $this->postJson(route('deals.storeOffer', $deal), [
+                'buyer_name' => $client->full_name,
+                'offer_price' => 1400000,
+                'financing_type' => $legacyType,
+            ])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('financing_type');
+        }
+
+        $this->assertSame(
+            0,
+            DealOffer::withoutGlobalScopes()->where('deal_id', $deal->id)->count()
+        );
+    }
+
 }
