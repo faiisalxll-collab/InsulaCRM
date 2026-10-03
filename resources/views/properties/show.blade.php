@@ -9,11 +9,11 @@
 @endsection
 
 @section('content')
-<div class="row">
+<div class="row" @if(($businessMode ?? 'wholesale') === 'realestate') dir="rtl" @endif>
     <div class="col-md-8">
         <div class="card mb-3">
             <div class="card-header">
-                <h3 class="card-title">{{ __('Property Details') }}</h3>
+                <h3 class="card-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تفاصيل العقار' : __('Property Details') }}</h3>
             </div>
             <div class="card-body">
                 <div class="datagrid">
@@ -22,9 +22,59 @@
                         <div class="datagrid-content">{{ $property->full_address }}</div>
                     </div>
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Type') }}</div>
-                        <div class="datagrid-content">{{ __(ucwords(str_replace('_', ' ', $property->property_type))) }}</div>
+                        <div class="datagrid-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'نوع العقار' : __('Type') }}</div>
+                        <div class="datagrid-content">{{ $propertyTypes[$property->property_type] ?? ucwords(str_replace('_', ' ', $property->property_type)) }}</div>
                     </div>
+                    @if(($businessMode ?? 'wholesale') === 'realestate')
+                    @php
+                        $transactionLabels = ['sale' => 'بيع', 'rent' => 'إيجار'];
+                        $facingLabels = [
+                            'north' => 'شمال', 'south' => 'جنوب', 'east' => 'شرق', 'west' => 'غرب',
+                            'north_east' => 'شمال شرقي', 'north_west' => 'شمال غربي',
+                            'south_east' => 'جنوب شرقي', 'south_west' => 'جنوب غربي',
+                        ];
+                    @endphp
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">نوع العملية</div>
+                        <div class="datagrid-content">{{ $transactionLabels[$property->transaction_type] ?? $property->transaction_type ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">الحي</div>
+                        <div class="datagrid-content">{{ $property->district ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">رقم المخطط</div>
+                        <div class="datagrid-content">{{ $property->plan_number ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">المساحة</div>
+                        <div class="datagrid-content">{{ $property->area_sqm ? number_format((float) $property->area_sqm) . ' م²' : '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">الواجهة</div>
+                        <div class="datagrid-content">{{ $facingLabels[$property->facing] ?? $property->facing ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">عرض الشارع</div>
+                        <div class="datagrid-content">{{ $property->street_width_m ? number_format((float) $property->street_width_m, 0) . ' م' : '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">عمر العقار</div>
+                        <div class="datagrid-content">{{ $property->property_age_years !== null ? $property->property_age_years . ' سنة' : '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">الأدوار / الوحدات</div>
+                        <div class="datagrid-content">{{ $property->floors ?? '—' }} / {{ $property->units ?? '—' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">التأثيث</div>
+                        <div class="datagrid-content">{{ $property->furnished === null ? '—' : ($property->furnished ? 'مفروش' : 'غير مفروش') }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">التمويل</div>
+                        <div class="datagrid-content">{{ $property->finance_eligible === null ? '—' : ($property->finance_eligible ? 'يقبل التمويل' : 'لا يقبل التمويل') }}</div>
+                    </div>
+                    @endif
                     <div class="datagrid-item">
                         <div class="datagrid-title">{{ __('Bedrooms') }}</div>
                         <div class="datagrid-content">{{ $property->bedrooms ?? '-' }}</div>
@@ -33,26 +83,28 @@
                         <div class="datagrid-title">{{ __('Bathrooms') }}</div>
                         <div class="datagrid-content">{{ $property->bathrooms ?? '-' }}</div>
                     </div>
-                    @if($property->square_footage)
-                    <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Square Footage') }}</div>
-                        <div class="datagrid-content">{{ Fmt::area($property->square_footage) }}</div>
-                    </div>
+                    @if(($businessMode ?? 'wholesale') === 'wholesale')
+                        @if($property->square_footage)
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">{{ __('Square Footage') }}</div>
+                            <div class="datagrid-content">{{ Fmt::area($property->square_footage) }}</div>
+                        </div>
+                        @endif
+                        @if($property->lot_size)
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">{{ __('Lot Size') }}</div>
+                            <div class="datagrid-content">{{ number_format($property->lot_size, 2) }} {{ __('acres') }}</div>
+                        </div>
+                        @endif
+                        @if($property->year_built)
+                        <div class="datagrid-item">
+                            <div class="datagrid-title">{{ __('Year Built') }}</div>
+                            <div class="datagrid-content">{{ $property->year_built }}</div>
+                        </div>
+                        @endif
                     @endif
-                    @if($property->lot_size)
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Lot Size') }}</div>
-                        <div class="datagrid-content">{{ number_format($property->lot_size, 2) }} {{ __('acres') }}</div>
-                    </div>
-                    @endif
-                    @if($property->year_built)
-                    <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Year Built') }}</div>
-                        <div class="datagrid-content">{{ $property->year_built }}</div>
-                    </div>
-                    @endif
-                    <div class="datagrid-item">
-                        <div class="datagrid-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? __('Contact') : __('Lead') }}</div>
+                        <div class="datagrid-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'العميل / المالك' : __('Lead') }}</div>
                         <div class="datagrid-content">
                             <a href="{{ route('leads.show', $property->lead_id) }}">{{ $property->lead->full_name }}</a>
                         </div>
@@ -64,7 +116,7 @@
     <div class="col-md-4">
         <div class="card mb-3">
             <div class="card-header">
-                <h3 class="card-title">{{ __('Financial Summary') }}</h3>
+                <h3 class="card-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'السعر وحالة العرض' : __('Financial Summary') }}</h3>
             </div>
             <div class="card-body">
                 @if($businessMode === 'wholesale')
@@ -100,35 +152,53 @@
                     @endif
                 </div>
                 @else
-                <div class="mb-2">
-                    <span class="text-secondary">{{ __('List Price:') }}</span>
-                    <strong>{{ Fmt::currency($property->list_price) }}</strong>
+                @php
+                    $listingStatusLabels = [
+                        'active' => 'نشط', 'pending' => 'معلّق', 'sold' => 'مباع',
+                        'withdrawn' => 'مسحوب', 'expired' => 'منتهي',
+                    ];
+                    $listingStatusColors = [
+                        'active' => 'bg-green-lt', 'pending' => 'bg-yellow-lt', 'sold' => 'bg-purple-lt',
+                        'withdrawn' => 'bg-red-lt', 'expired' => 'bg-secondary-lt',
+                    ];
+                @endphp
+                <div class="mb-2 d-flex justify-content-between gap-3">
+                    <span class="text-secondary">السعر:</span>
+                    <strong>{{ Fmt::currency($property->list_price ?? $property->asking_price) }}</strong>
                 </div>
-                <div class="mb-2">
-                    <span class="text-secondary">{{ __('Listing Status:') }}</span>
+                <div class="mb-2 d-flex justify-content-between gap-3">
+                    <span class="text-secondary">سعر المتر:</span>
+                    <strong>{{ $property->price_per_sqm ? number_format((float) $property->price_per_sqm) . ' ر.س/م²' : '—' }}</strong>
+                </div>
+                <div class="mb-2 d-flex justify-content-between gap-3">
+                    <span class="text-secondary">حالة العرض:</span>
                     @if($property->listing_status)
-                        @php $listingStatusColors = ['active' => 'bg-green-lt', 'pending' => 'bg-yellow-lt', 'sold' => 'bg-purple-lt', 'withdrawn' => 'bg-red-lt', 'expired' => 'bg-secondary-lt']; @endphp
-                        <span class="badge {{ $listingStatusColors[$property->listing_status] ?? 'bg-blue-lt' }}">{{ __(ucfirst($property->listing_status)) }}</span>
+                        <span class="badge {{ $listingStatusColors[$property->listing_status] ?? 'bg-blue-lt' }}">{{ $listingStatusLabels[$property->listing_status] ?? $property->listing_status }}</span>
                     @else
-                        <strong>-</strong>
+                        <strong>—</strong>
                     @endif
                 </div>
-                <div class="mb-2">
-                    <span class="text-secondary">{{ __('Listed At:') }}</span>
-                    <strong>{{ $property->listed_at ? $property->listed_at->format('M d, Y') : '-' }}</strong>
+                <div class="mb-2 d-flex justify-content-between gap-3">
+                    <span class="text-secondary">المطابقات النشطة:</span>
+                    <strong>{{ $property->eligible_matches_count }}</strong>
                 </div>
-                <div class="mb-2">
-                    <span class="text-secondary">{{ __('Sold At:') }}</span>
-                    <strong>{{ $property->sold_at ? $property->sold_at->format('M d, Y') : '-' }}</strong>
+                @if($property->listed_at)
+                <div class="mb-2 d-flex justify-content-between gap-3">
+                    <span class="text-secondary">تاريخ العرض:</span>
+                    <strong>{{ $property->listed_at->format('Y-m-d') }}</strong>
                 </div>
-                <div class="mb-2">
-                    <span class="text-secondary">{{ __('Sold Price:') }}</span>
-                    <strong>{{ $property->sold_price ? Fmt::currency($property->sold_price) : '-' }}</strong>
+                @endif
+                @if($property->sold_at || $property->sold_price)
+                <hr>
+                <div class="mb-2 d-flex justify-content-between gap-3">
+                    <span class="text-secondary">تاريخ الإغلاق:</span>
+                    <strong>{{ $property->sold_at?->format('Y-m-d') ?? '—' }}</strong>
                 </div>
-                <div class="mb-2">
-                    <span class="text-secondary">{{ __('Estimated Value:') }}</span>
-                    <strong>{{ Fmt::currency($property->estimated_value) }}</strong>
+                <div class="mb-2 d-flex justify-content-between gap-3">
+                    <span class="text-secondary">سعر الإغلاق:</span>
+                    <strong>{{ $property->sold_price ? Fmt::currency($property->sold_price) : '—' }}</strong>
                 </div>
+                @endif
                 @endif
                 @if(auth()->user()->tenant->ai_enabled)
                 <hr>
