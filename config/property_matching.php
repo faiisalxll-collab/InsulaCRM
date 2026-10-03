@@ -7,7 +7,7 @@ return [
         'area' => 15,
         'rooms' => 10,
         'street_width' => 10,
-        'frontage' => 5,
+        'facing' => 5,
         'age' => 5,
         'finance' => 5,
     ],
