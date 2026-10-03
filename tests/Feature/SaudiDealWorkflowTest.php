@@ -750,4 +750,51 @@ class SaudiDealWorkflowTest extends TestCase
         $this->assertStringNotContainsString('صفقة أخرى', $csv);
     }
 
+
+    public function test_saudi_v1_blocks_legacy_document_generation_but_keeps_manual_upload(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار مستندات سعودي',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        $deal = Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $property->id,
+            'property_request_id' => $propertyRequest->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة مستندات',
+            'stage' => 'offer_received',
+        ]);
+
+        $this->get(route('documents.generate', $deal))
+            ->assertNotFound();
+
+        $this->get(route('deals.show', $deal))
+            ->assertOk()
+            ->assertDontSee('Generate Document')
+            ->assertSee('PDF, JPG, PNG. Max 10MB.');
+    }
+
 }
