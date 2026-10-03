@@ -230,4 +230,49 @@ class SaudiPropertyManagementTest extends TestCase
         $this->assertFalse($policy->delete($this->adminUser, $foreignProperty));
     }
 
+
+    public function test_property_with_showing_cannot_be_deleted(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار له سجل معاينة',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $request = \App\Models\PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        \App\Models\Showing::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'property_request_id' => $request->id,
+            'property_id' => $property->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'showing_date' => now()->addDay()->toDateString(),
+            'showing_time' => '17:00',
+        ]);
+
+        $this->delete(route('properties.destroy', $property))
+            ->assertRedirect(route('properties.show', $property))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('properties', ['id' => $property->id]);
+    }
+
 }
