@@ -37,7 +37,22 @@ class PropertyRequest extends FormRequest
         ];
 
         if (BusinessModeService::isRealEstate()) {
+            // Saudi addresses do not require a US-style 2-letter state or ZIP.
+            $rules['state'] = 'nullable|string|max:100';
+            $rules['zip_code'] = 'nullable|string|max:10';
+
             $rules += [
+                'transaction_type' => 'required|in:sale,rent',
+                'district' => 'nullable|string|max:120',
+                'plan_number' => 'nullable|string|max:100',
+                'area_sqm' => 'nullable|numeric|min:0|max:99999999.99',
+                'facing' => 'nullable|string|max:30',
+                'street_width_m' => 'nullable|numeric|min:0|max:9999.99',
+                'property_age_years' => 'nullable|integer|min:0|max:1000',
+                'finance_eligible' => 'nullable|boolean',
+                'price_per_sqm' => 'nullable|numeric|min:0',
+                'latitude' => 'nullable|numeric|between:-90,90',
+                'longitude' => 'nullable|numeric|between:-180,180',
                 'list_price' => 'nullable|numeric|min:0',
                 'listing_status' => 'nullable|in:active,pending,sold,withdrawn,expired',
                 'listed_at' => 'nullable|date',
