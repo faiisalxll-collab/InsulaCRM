@@ -163,42 +163,42 @@ class DealController extends Controller
             $deal->agent->notify(new DealStageChangedNotification($deal, $oldStage, $tenant));
         }
 
-        // Dispatch buyer matching when deal moves to the mode-appropriate trigger stage
-        $matchTrigger = \App\Services\BusinessModeService::getBuyerMatchTriggerStage();
-        if ($request->stage === $matchTrigger) {
-            app(\App\Services\BuyerMatchService::class)->matchForDeal($deal);
+        // Legacy cash-buyer matching belongs to wholesale only.
+        // Saudi real-estate uses PropertyMatchingService + PropertyMatch.
+        if (\App\Services\BusinessModeService::isWholesale($tenant)) {
+            $matchTrigger = \App\Services\BusinessModeService::getBuyerMatchTriggerStage($tenant);
 
-            // Notify admins and relevant agents if buyer matches found
-            if ($tenant->wantsNotification('buyer_matched')) {
-                $deal->load('buyerMatches');
-                $matches = $deal->buyerMatches;
-                if ($matches->count() > 0) {
-                    $topScore = $matches->max('score') ?? 0;
-                    $adminRoleId = Role::where('name', 'admin')->value('id');
+            if ($request->stage === $matchTrigger) {
+                app(\App\Services\BuyerMatchService::class)->matchForDeal($deal);
 
-                    $isRE = \App\Services\BusinessModeService::isRealEstate($tenant);
-                    $notifyRoles = $isRE
-                        ? ['listing_agent', 'buyers_agent']
-                        : ['disposition_agent'];
-                    $extraRoleIds = Role::whereIn('name', $notifyRoles)->pluck('id')->all();
+                if ($tenant->wantsNotification('buyer_matched')) {
+                    $deal->load('buyerMatches');
+                    $matches = $deal->buyerMatches;
 
-                    $recipients = User::where('tenant_id', $tenant->id)
-                        ->whereIn('role_id', array_merge([$adminRoleId], $extraRoleIds))
-                        ->where('is_active', true)
-                        ->get();
-                    if ($recipients->isNotEmpty()) {
-                        Notification::send($recipients, new BuyerMatchFound($deal, $matches->count(), $topScore, $tenant));
+                    if ($matches->count() > 0) {
+                        $topScore = $matches->max('score') ?? 0;
+                        $adminRoleId = Role::where('name', 'admin')->value('id');
+                        $extraRoleIds = Role::whereIn('name', ['disposition_agent'])->pluck('id')->all();
+
+                        $recipients = User::where('tenant_id', $tenant->id)
+                            ->whereIn('role_id', array_merge([$adminRoleId], $extraRoleIds))
+                            ->where('is_active', true)
+                            ->get();
+
+                        if ($recipients->isNotEmpty()) {
+                            Notification::send($recipients, new BuyerMatchFound($deal, $matches->count(), $topScore, $tenant));
+                        }
                     }
                 }
             }
-        }
 
-        // Decrease buyer reliability if deal reverts back to match trigger stage (buyer backed out)
-        if ($oldStage !== $matchTrigger && $request->stage === $matchTrigger) {
-            $assignedMatch = $deal->buyerMatches()->where('status', 'interested')->first();
-            if ($assignedMatch && $assignedMatch->buyer) {
-                $assignedMatch->update(['status' => 'passed']);
-                BuyerScoreService::recalculate($assignedMatch->buyer);
+            if ($oldStage !== $matchTrigger && $request->stage === $matchTrigger) {
+                $assignedMatch = $deal->buyerMatches()->where('status', 'interested')->first();
+
+                if ($assignedMatch && $assignedMatch->buyer) {
+                    $assignedMatch->update(['status' => 'passed']);
+                    BuyerScoreService::recalculate($assignedMatch->buyer);
+                }
             }
         }
 
