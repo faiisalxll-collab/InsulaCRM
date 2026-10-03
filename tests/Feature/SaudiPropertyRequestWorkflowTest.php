@@ -258,4 +258,49 @@ class SaudiPropertyRequestWorkflowTest extends TestCase
         $this->assertSame($property->id, $showing->property_id);
     }
 
+
+    public function test_request_with_showing_cannot_be_deleted(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = \App\Models\Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار سجل الطلب',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = \App\Models\PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        \App\Models\Showing::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'property_request_id' => $propertyRequest->id,
+            'property_id' => $property->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'showing_date' => now()->addDay()->toDateString(),
+            'showing_time' => '18:00',
+        ]);
+
+        $this->delete(route('property-requests.destroy', $propertyRequest))
+            ->assertRedirect(route('property-requests.show', $propertyRequest))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('property_requests', ['id' => $propertyRequest->id]);
+    }
+
 }
