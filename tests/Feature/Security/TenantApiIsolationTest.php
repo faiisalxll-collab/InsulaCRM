@@ -71,6 +71,35 @@ class TenantApiIsolationTest extends TestCase
         ]);
     }
 
+    public function test_deal_cannot_reference_another_offices_agent(): void
+    {
+        $role = Role::where('name', 'admin')->firstOrFail();
+
+        $foreignAgent = User::factory()->create([
+            'tenant_id' => $this->officeB->id,
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+
+        $lead = Lead::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeA->id,
+            'first_name' => 'Office',
+            'last_name' => 'A',
+            'status' => 'new',
+        ]);
+
+        $this->postJson('/api/v1/deals', [
+            'lead_id' => $lead->id,
+            'agent_id' => $foreignAgent->id,
+            'title' => 'Cross Office Deal',
+        ], $this->headersFor($this->officeA))->assertNotFound();
+
+        $this->assertDatabaseMissing('deals', [
+            'tenant_id' => $this->officeA->id,
+            'agent_id' => $foreignAgent->id,
+        ]);
+    }
+
     public function test_property_cannot_reference_another_offices_lead(): void
     {
         $lead = Lead::withoutGlobalScopes()->create([
