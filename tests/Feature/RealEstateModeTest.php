@@ -136,6 +136,52 @@ class RealEstateModeTest extends TestCase
         $response->assertSee('العروض والتفاوض');
     }
 
+    public function test_realestate_deal_hides_us_only_transaction_fields(): void
+    {
+        $this->actingAsAdmin([
+            'business_mode' => 'realestate',
+            'country' => 'SA',
+            'currency' => 'SAR',
+            'locale' => 'ar',
+        ]);
+
+        $deal = $this->createDeal([
+            'stage' => 'under_contract',
+            'inspection_period_days' => 10,
+            'mls_number' => 'LEGACY-MLS-123',
+            'listing_commission_pct' => 2.5,
+            'buyer_commission_pct' => 2.5,
+        ]);
+
+        $this->get("/pipeline/{$deal->id}")
+            ->assertOk()
+            ->assertSee('إجمالي العمولة')
+            ->assertSee('حصة المكتب من العمولة')
+            ->assertDontSee('MLS #')
+            ->assertDontSee('Listing Commission')
+            ->assertDontSee('Buyer Commission')
+            ->assertDontSee('Due Diligence');
+    }
+
+    public function test_realestate_pipeline_hides_us_only_editor_fields(): void
+    {
+        $this->actingAsAdmin([
+            'business_mode' => 'realestate',
+            'country' => 'SA',
+            'currency' => 'SAR',
+            'locale' => 'ar',
+        ]);
+
+        $this->createDeal(['stage' => 'offer_received']);
+
+        $this->get('/pipeline')
+            ->assertOk()
+            ->assertDontSee('MLS #')
+            ->assertDontSee('Listing Commission')
+            ->assertDontSee('Buyer Commission')
+            ->assertSee('إجمالي العمولة');
+    }
+
     public function test_saudi_web_property_can_be_saved_without_us_address_fields(): void
     {
         $this->actingAsAdmin([
