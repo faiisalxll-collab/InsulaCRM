@@ -309,7 +309,7 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
 
     // ── Field scout property submission: field_scout + admin ─────────
     Route::post('/properties', [PropertyController::class, 'fieldScoutStore'])
-        ->middleware('role:admin,field_scout')
+        ->middleware(['role:admin,field_scout', 'mode:wholesale'])
         ->name('properties.store');
 
     // ── Pipeline / Deals: all except field_scout ─────────────────────
