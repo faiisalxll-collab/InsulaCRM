@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Deal;
 use App\Models\Property;
 use App\Models\PropertyRequest as PropertySearchRequest;
 use App\Models\Showing;
@@ -54,7 +55,12 @@ class ShowingRequest extends FormRequest
                 Rule::exists('properties', 'id')->where('tenant_id', $tenantId),
             ],
             'lead_id' => ['nullable', $leadExists],
-            'deal_id' => ['nullable', Rule::exists('deals', 'id')->where('tenant_id', $tenantId)],
+            'deal_id' => ['nullable', Rule::exists('deals', 'id')->where(function ($query) use ($user, $tenantId) {
+                $query->where('tenant_id', $tenantId);
+                if (! $user->isAdmin()) {
+                    $query->where('agent_id', $user->id);
+                }
+            })],
             'agent_id' => $agentRules,
             'showing_date' => $creating ? 'required|date' : 'sometimes|date',
             'showing_time' => $creating ? 'required' : 'sometimes',
@@ -83,15 +89,32 @@ class ShowingRequest extends FormRequest
                     ? $this->input('property_request_id')
                     : $showing?->property_request_id;
 
-                if (! $requestId) {
-                    return;
-                }
-
                 $propertyId = $this->has('property_id')
                     ? $this->input('property_id')
                     : $showing?->property_id;
 
-                if (! $propertyId) {
+                $dealId = $this->has('deal_id') ? $this->input('deal_id') : $showing?->deal_id;
+
+                // A showing that has started a transaction is historical evidence.
+                // Keep its parties and transaction links stable when editing feedback.
+                if ($showing?->deal_id) {
+                    foreach (['property_id', 'property_request_id', 'deal_id', 'lead_id', 'agent_id'] as $field) {
+                        if ($this->has($field) && (int) $this->input($field) !== (int) $showing->{$field}) {
+                            $validator->errors()->add($field, 'لا يمكن تغيير أطراف معاينة مرتبطة بصفقة.');
+                        }
+                    }
+                }
+
+                if ($dealId) {
+                    $deal = Deal::query()->find($dealId);
+                    if (! $deal || ! $this->user()->can('update', $deal)
+                        || ($deal->property_id && (int) $deal->property_id !== (int) $propertyId)
+                        || ($deal->property_request_id && (int) $deal->property_request_id !== (int) $requestId)) {
+                        $validator->errors()->add('deal_id', 'الصفقة لا تطابق العقار والطلب أو صلاحيات الوسيط.');
+                    }
+                }
+
+                if (! $requestId || ! $propertyId || $validator->errors()->isNotEmpty()) {
                     return;
                 }
 

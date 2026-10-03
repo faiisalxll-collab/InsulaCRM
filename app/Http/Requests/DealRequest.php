@@ -24,6 +24,10 @@ class DealRequest extends FormRequest
         ];
 
         if (\App\Services\BusinessModeService::isRealEstate()) {
+            // Stage transitions must use updateStage so inventory, requests,
+            // commission and the audit trail move together.
+            $base['stage'] = 'prohibited';
+
             return $base + [
                 'total_commission' => 'nullable|numeric|min:0',
                 'brokerage_split_pct' => 'nullable|numeric|min:0|max:100',
