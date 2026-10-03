@@ -649,7 +649,7 @@
                     </div>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary flex-fill" id="panel-save-btn">{{ $businessMode === 'realestate' ? 'حفظ التعديلات' : __('Save Changes') }}</button>
-                        @if(auth()->user()->tenant->ai_enabled)
+                        @if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled)
                         <button type="button" class="btn btn-outline-purple" onclick="aiAnalyzeDeal(${deal.id})" title="{{ __('AI Deal Analysis') }}">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-sparkles" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/></svg>
                             {{ __('AI Analyze') }}
@@ -683,12 +683,12 @@
                 html += '<p class="text-secondary">{{ __('No documents uploaded.') }}</p>';
             }
 
-            if (deal.buyer_matches && deal.buyer_matches.length) {
+            if (@json(($businessMode ?? 'wholesale') === 'wholesale') && deal.buyer_matches && deal.buyer_matches.length) {
                 html += '<hr><h4>{{ __('Matched') }} {{ $modeTerms['buyer_label'] ?? __('Buyers') }}</h4><div class="list-group list-group-flush">';
                 deal.buyer_matches.forEach(m => {
                     const scoreClass = m.match_score >= 70 ? 'bg-green-lt' : (m.match_score >= 40 ? 'bg-yellow-lt' : 'bg-red-lt');
                     const sparkSvg = '<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm0 -12a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2zm-7 12a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z"/></svg>';
-                    const aiBtn = @json(auth()->user()->tenant->ai_enabled ?? false) ? `<button class="btn btn-outline-purple btn-sm ms-1" onclick="aiDraftBuyerMsg(${deal.id}, ${m.buyer ? m.buyer.id : 0})" title="{{ __('AI Draft Message') }}">${sparkSvg}</button><button class="btn btn-outline-info btn-sm ms-1" onclick="aiExplainMatch(${deal.id}, ${m.buyer ? m.buyer.id : 0})" title="{{ __('Explain Match') }}">${sparkSvg}</button>` : '';
+                    const aiBtn = @json((($businessMode ?? 'wholesale') === 'wholesale') && (auth()->user()->tenant->ai_enabled ?? false)) ? `<button class="btn btn-outline-purple btn-sm ms-1" onclick="aiDraftBuyerMsg(${deal.id}, ${m.buyer ? m.buyer.id : 0})" title="{{ __('AI Draft Message') }}">${sparkSvg}</button><button class="btn btn-outline-info btn-sm ms-1" onclick="aiExplainMatch(${deal.id}, ${m.buyer ? m.buyer.id : 0})" title="{{ __('Explain Match') }}">${sparkSvg}</button>` : '';
                     html += `<div class="list-group-item d-flex justify-content-between align-items-center">
                         <div><strong>${m.buyer ? m.buyer.company_name : '-'}</strong><br><small class="text-secondary">${m.buyer ? m.buyer.contact_name : ''}</small></div>
                         <div class="d-flex align-items-center">${aiBtn}<span class="badge ${scoreClass} ms-1">${m.match_score}%</span></div>
@@ -917,7 +917,7 @@
     });
 })();
 
-@if(auth()->user()->tenant->ai_enabled)
+@if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled)
 // ── AI Functions for Pipeline ───────────────────────
 var _pipelineCurrentDealId = null;
 var _pipelineCurrentLeadId = null;
@@ -1096,7 +1096,7 @@ function markPFailed(btn) {
 </script>
 @endpush
 
-@if(auth()->user()->tenant->ai_enabled)
+@if(($businessMode ?? 'wholesale') === 'wholesale' && auth()->user()->tenant->ai_enabled)
 <!-- Pipeline AI Modal -->
 <div class="modal modal-blur fade" id="pipeline-ai-modal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
