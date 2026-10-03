@@ -1,0 +1,43 @@
+name: Security Baseline
+
+on:
+  push:
+    branches:
+      - security-baseline
+      - saudi-real-estate
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_sqlite
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare Laravel
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run tenant isolation tests
+        run: php artisan test tests/Feature/Security --stop-on-failure
+
+      - name: Run full test suite
+        run: php artisan test
