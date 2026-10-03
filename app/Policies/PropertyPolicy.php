@@ -14,6 +14,10 @@ class PropertyPolicy
 
     public function view(User $user, Property $property): bool
     {
+        if ((int) $user->tenant_id !== (int) $property->tenant_id) {
+            return false;
+        }
+
         if (! $this->viewAny($user)) {
             return false;
         }
@@ -22,7 +26,7 @@ class PropertyPolicy
             return true;
         }
 
-        return $property->lead_id === null || $property->lead?->agent_id === $user->id;
+        return $property->lead_id === null || (int) $property->lead?->agent_id === (int) $user->id;
     }
 
     public function create(User $user): bool
