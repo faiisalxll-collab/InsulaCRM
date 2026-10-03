@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-<div class="row">
+<div class="row" @if(($businessMode ?? 'wholesale') === 'realestate') dir="rtl" @endif>
     <div class="col-md-8">
         <!-- AI Briefing (auto-loads) -->
         @if(auth()->user()->tenant->ai_enabled && auth()->user()->tenant->ai_briefings_enabled)
@@ -37,6 +37,68 @@
                 <div id="deal-briefing-text" style="font-size: 0.82rem; line-height: 1.6; display: none; color: #334155;"></div>
                 <div id="deal-briefing-links" style="display: none;" class="mt-2 pt-2 d-flex flex-wrap gap-1"></div>
                 <div id="deal-briefing-error" style="font-size: 0.82rem; display: none;" class="text-danger"></div>
+            </div>
+        </div>
+        @endif
+
+        @if(($businessMode ?? 'wholesale') === 'realestate' && $deal->property)
+        <div class="card mb-3">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">ملخص الصفقة</h3>
+                    <div class="text-muted small mt-1">الربط بين العقار والمالك وطلب العميل.</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="datagrid">
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">العقار</div>
+                        <div class="datagrid-content">
+                            <a href="{{ route('properties.show', $deal->property) }}">{{ $deal->property->address }}</a>
+                            <div class="text-muted small">
+                                {{ $deal->property->district ? $deal->property->district.'، ' : '' }}{{ $deal->property->city }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">العملية</div>
+                        <div class="datagrid-content">{{ $deal->property->transaction_type === 'rent' ? 'إيجار' : 'بيع' }}</div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">المالك</div>
+                        <div class="datagrid-content">
+                            @if($deal->lead)
+                                <a href="{{ route('leads.show', $deal->lead) }}">{{ $deal->lead->full_name }}</a>
+                            @else
+                                —
+                            @endif
+                        </div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">العميل</div>
+                        <div class="datagrid-content">
+                            @if($deal->propertyRequest?->lead)
+                                <a href="{{ route('leads.show', $deal->propertyRequest->lead) }}">{{ $deal->propertyRequest->lead->full_name }}</a>
+                            @else
+                                —
+                            @endif
+                        </div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">الطلب</div>
+                        <div class="datagrid-content">
+                            @if($deal->propertyRequest)
+                                <a href="{{ route('property-requests.show', $deal->propertyRequest) }}">طلب #{{ $deal->propertyRequest->id }}</a>
+                            @else
+                                —
+                            @endif
+                        </div>
+                    </div>
+                    <div class="datagrid-item">
+                        <div class="datagrid-title">الوسيط</div>
+                        <div class="datagrid-content">{{ $deal->agent?->name ?? '—' }}</div>
+                    </div>
+                </div>
             </div>
         </div>
         @endif
@@ -86,13 +148,14 @@
                         </div>
                     </div>
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Agent') }}</div>
+                        <div class="datagrid-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'الوسيط' : __('Agent') }}</div>
                         <div class="datagrid-content">{{ $deal->agent->name ?? '-' }}</div>
                     </div>
+                    @if(($businessMode ?? 'wholesale') === 'wholesale')
                     <div class="datagrid-item">
                         <div class="datagrid-title">{{ __('Matched') }} {{ $modeTerms['buyer_label'] ?? __('Buyers') }}</div>
                         <div class="datagrid-content">
-                            @if($deal->buyerMatches->count())
+                            @if(($businessMode ?? 'wholesale') === 'wholesale' && $deal->buyerMatches->count())
                                 <span class="badge bg-green-lt">{{ $deal->buyerMatches->count() }}</span>
                                 <span class="text-secondary small ms-1">{{ __('best') }}: {{ $deal->buyerMatches->max('match_score') }}%</span>
                             @else
@@ -100,8 +163,9 @@
                             @endif
                         </div>
                     </div>
+                    @endif
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Contract Price') }}</div>
+                        <div class="datagrid-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'قيمة الاتفاق' : __('Contract Price') }}</div>
                         <div class="datagrid-content">{{ Fmt::currency($deal->contract_price) }}</div>
                     </div>
                     @if($businessMode === 'wholesale')
@@ -115,23 +179,27 @@
                     </div>
                     @else
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Listing Commission') }}</div>
-                        <div class="datagrid-content">{{ $deal->listing_commission_pct ? $deal->listing_commission_pct . '%' : '-' }}</div>
+                        <div class="datagrid-title">إجمالي العمولة</div>
+                        <div class="datagrid-content">{{ $deal->total_commission !== null ? Fmt::currency($deal->total_commission) : '—' }}</div>
                     </div>
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Buyer Commission') }}</div>
-                        <div class="datagrid-content">{{ $deal->buyer_commission_pct ? $deal->buyer_commission_pct . '%' : '-' }}</div>
+                        <div class="datagrid-title">حصة المكتب</div>
+                        <div class="datagrid-content">{{ $deal->office_commission_amount !== null ? Fmt::currency($deal->office_commission_amount) : '—' }}</div>
                     </div>
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('Total Commission') }}</div>
-                        <div class="datagrid-content">{{ Fmt::currency($deal->total_commission) }}</div>
+                        <div class="datagrid-title">حصة الوسيط</div>
+                        <div class="datagrid-content">{{ $deal->agent_commission_amount !== null ? Fmt::currency($deal->agent_commission_amount) : '—' }}</div>
                     </div>
-                    @if($deal->mls_number)
                     <div class="datagrid-item">
-                        <div class="datagrid-title">{{ __('MLS #') }}</div>
-                        <div class="datagrid-content">{{ $deal->mls_number }}</div>
+                        <div class="datagrid-title">حالة العمولة</div>
+                        <div class="datagrid-content">
+                            {{ [
+                                'pending' => 'معلقة',
+                                'due' => 'مستحقة',
+                                'paid' => 'مدفوعة',
+                            ][$deal->commission_status ?? 'pending'] ?? ($deal->commission_status ?? '—') }}
+                        </div>
                     </div>
-                    @endif
                     @endif
                     <div class="datagrid-item">
                         <div class="datagrid-title">{{ __('Contract Date') }}</div>
@@ -141,10 +209,12 @@
                         <div class="datagrid-title">{{ __('Closing Date') }}</div>
                         <div class="datagrid-content">{{ $deal->closing_date ? $deal->closing_date->format('M d, Y') : '-' }}</div>
                     </div>
+                    @if(($businessMode ?? 'wholesale') === 'wholesale')
                     <div class="datagrid-item">
                         <div class="datagrid-title">{{ __('Inspection Period') }}</div>
                         <div class="datagrid-content">{{ $deal->inspection_period_days ? $deal->inspection_period_days . ' ' . __('days') : '-' }}</div>
                     </div>
+                    @endif
                 </div>
 
                 @if($deal->stage === 'under_contract' && $deal->due_diligence_end_date)
