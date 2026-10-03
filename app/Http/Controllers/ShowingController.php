@@ -6,6 +6,7 @@ use App\Http\Requests\ShowingRequest;
 use App\Models\Activity;
 use App\Models\Lead;
 use App\Models\Property;
+use App\Models\PropertyRequest as PropertySearchRequest;
 use App\Models\Showing;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,7 @@ class ShowingController extends Controller
     {
         $this->authorize('viewAny', Showing::class);
 
-        $query = Showing::with(['property', 'lead', 'agent']);
+        $query = Showing::with(['property', 'lead', 'agent', 'propertyRequest']);
 
         if (!auth()->user()->isAdmin()) {
             $query->where('agent_id', auth()->id());
@@ -58,18 +59,46 @@ class ShowingController extends Controller
         return view('showings.index', compact('showings', 'agents'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $this->authorize('create', Showing::class);
 
-        $properties = Property::orderBy('address')->get(['id', 'address', 'city', 'state']);
-        $leads = Lead::orderBy('first_name')->get(['id', 'first_name', 'last_name']);
-        $agents = \App\Models\User::where('tenant_id', auth()->user()->tenant_id)
+        $user = auth()->user();
+
+        $properties = Property::orderBy('address')
+            ->get(['id', 'address', 'city', 'district', 'state', 'property_type', 'transaction_type']);
+
+        $leads = Lead::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('agent_id', $user->id))
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name']);
+
+        $agents = \App\Models\User::where('tenant_id', $user->tenant_id)
+            ->when(! $user->isAdmin(), fn ($query) => $query->whereKey($user->id))
             ->whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'agent', 'listing_agent', 'buyers_agent']))
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('showings.create', compact('properties', 'leads', 'agents'));
+        $propertyRequests = PropertySearchRequest::with('lead')
+            ->where('status', 'active')
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('agent_id', $user->id))
+            ->latest()
+            ->get();
+
+        $selectedRequest = null;
+        if ($request->filled('property_request_id')) {
+            $selectedRequest = PropertySearchRequest::query()->findOrFail($request->integer('property_request_id'));
+            $this->authorize('view', $selectedRequest);
+        }
+
+        return view('showings.create', [
+            'properties' => $properties,
+            'leads' => $leads,
+            'agents' => $agents,
+            'propertyRequests' => $propertyRequests,
+            'selectedRequest' => $selectedRequest,
+            'selectedPropertyId' => $request->integer('property_id') ?: null,
+        ]);
     }
 
     public function store(ShowingRequest $request)
@@ -77,8 +106,27 @@ class ShowingController extends Controller
         $this->authorize('create', Showing::class);
 
         $data = $request->validated();
-        $data['tenant_id'] = auth()->user()->tenant_id;
-        $data['agent_id'] = $data['agent_id'] ?? auth()->id();
+        $user = auth()->user();
+        $data['tenant_id'] = $user->tenant_id;
+
+        if (! empty($data['property_request_id'])) {
+            $propertyRequest = PropertySearchRequest::query()->findOrFail($data['property_request_id']);
+            $this->authorize('view', $propertyRequest);
+
+            if ($propertyRequest->lead_id) {
+                $data['lead_id'] = $propertyRequest->lead_id;
+            }
+
+            if ($propertyRequest->agent_id) {
+                $data['agent_id'] = $propertyRequest->agent_id;
+            }
+        }
+
+        if (! $user->isAdmin()) {
+            $data['agent_id'] = $user->id;
+        } else {
+            $data['agent_id'] = $data['agent_id'] ?? $user->id;
+        }
 
         $showing = Showing::create($data);
 
@@ -106,7 +154,7 @@ class ShowingController extends Controller
     public function show(Showing $showing)
     {
         $this->authorize('view', $showing);
-        $showing->load(['property', 'lead', 'agent', 'deal']);
+        $showing->load(['property', 'lead', 'agent', 'deal', 'propertyRequest']);
 
         return view('showings.show', compact('showing'));
     }
@@ -115,21 +163,72 @@ class ShowingController extends Controller
     {
         $this->authorize('update', $showing);
 
-        $properties = Property::orderBy('address')->get(['id', 'address', 'city', 'state']);
-        $leads = Lead::orderBy('first_name')->get(['id', 'first_name', 'last_name']);
-        $agents = \App\Models\User::where('tenant_id', auth()->user()->tenant_id)
+        $user = auth()->user();
+
+        $properties = Property::orderBy('address')
+            ->get(['id', 'address', 'city', 'district', 'state', 'property_type', 'transaction_type']);
+
+        $leads = Lead::query()
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('agent_id', $user->id))
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name']);
+
+        $agents = \App\Models\User::where('tenant_id', $user->tenant_id)
+            ->when(! $user->isAdmin(), fn ($query) => $query->whereKey($user->id))
             ->whereHas('role', fn ($q) => $q->whereIn('name', ['admin', 'agent', 'listing_agent', 'buyers_agent']))
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('showings.edit', compact('showing', 'properties', 'leads', 'agents'));
+        $propertyRequests = PropertySearchRequest::with('lead')
+            ->when(! $user->isAdmin(), fn ($query) => $query->where('agent_id', $user->id))
+            ->where(function ($query) use ($showing) {
+                $query->where('status', 'active');
+
+                if ($showing->property_request_id) {
+                    $query->orWhereKey($showing->property_request_id);
+                }
+            })
+            ->latest()
+            ->get();
+
+        return view('showings.edit', compact(
+            'showing',
+            'properties',
+            'leads',
+            'agents',
+            'propertyRequests'
+        ));
     }
 
     public function update(ShowingRequest $request, Showing $showing)
     {
         $this->authorize('update', $showing);
 
-        $showing->update($request->validated());
+        $data = $request->validated();
+        $user = auth()->user();
+
+        $finalRequestId = array_key_exists('property_request_id', $data)
+            ? $data['property_request_id']
+            : $showing->property_request_id;
+
+        if ($finalRequestId) {
+            $propertyRequest = PropertySearchRequest::query()->findOrFail($finalRequestId);
+            $this->authorize('view', $propertyRequest);
+
+            if ($propertyRequest->lead_id) {
+                $data['lead_id'] = $propertyRequest->lead_id;
+            }
+
+            if ($propertyRequest->agent_id) {
+                $data['agent_id'] = $propertyRequest->agent_id;
+            }
+        }
+
+        if (! $user->isAdmin()) {
+            $data['agent_id'] = $user->id;
+        }
+
+        $showing->update($data);
 
         if ($request->ajax()) {
             return response()->json(['success' => true, 'showing' => $showing->fresh()]);
