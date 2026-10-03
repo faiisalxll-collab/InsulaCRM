@@ -86,12 +86,16 @@
                     <input type="text" name="city" class="form-control" value="{{ old('city', $lead->property->city ?? '') }}" required>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label required">{{ Fmt::stateLabel() }}</label>
-                    <input type="text" name="state" class="form-control" maxlength="{{ Fmt::stateMaxLength() }}" value="{{ old('state', $lead->property->state ?? '') }}" required>
+                    <label class="form-label {{ ($businessMode ?? 'wholesale') === 'wholesale' ? 'required' : '' }}">
+                        {{ ($businessMode ?? 'wholesale') === 'realestate' ? 'المنطقة' : Fmt::stateLabel() }}
+                    </label>
+                    <input type="text" name="state" class="form-control" maxlength="{{ ($businessMode ?? 'wholesale') === 'realestate' ? 100 : Fmt::stateMaxLength() }}" value="{{ old('state', $lead->property->state ?? '') }}" {{ ($businessMode ?? 'wholesale') === 'wholesale' ? 'required' : '' }}>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label required">{{ Fmt::postalCodeLabel() }}</label>
-                    <input type="text" name="zip_code" class="form-control" maxlength="{{ Fmt::postalCodeMaxLength() }}" value="{{ old('zip_code', $lead->property->zip_code ?? '') }}" required>
+                    <label class="form-label {{ ($businessMode ?? 'wholesale') === 'wholesale' ? 'required' : '' }}">
+                        {{ ($businessMode ?? 'wholesale') === 'realestate' ? 'الرمز البريدي' : Fmt::postalCodeLabel() }}
+                    </label>
+                    <input type="text" name="zip_code" class="form-control" maxlength="{{ Fmt::postalCodeMaxLength() }}" value="{{ old('zip_code', $lead->property->zip_code ?? '') }}" {{ ($businessMode ?? 'wholesale') === 'wholesale' ? 'required' : '' }}>
                 </div>
             </div>
             <div class="row mb-3">
@@ -147,6 +151,81 @@
                 </div>
                 @endif
             </div>
+            @if(($businessMode ?? 'wholesale') === 'realestate')
+            <div class="row mb-3" dir="rtl">
+                <div class="col-md-3">
+                    <label class="form-label required">نوع العملية</label>
+                    <select name="transaction_type" class="form-select" required>
+                        <option value="sale" {{ old('transaction_type', $lead->property->transaction_type ?? 'sale') === 'sale' ? 'selected' : '' }}>بيع</option>
+                        <option value="rent" {{ old('transaction_type', $lead->property->transaction_type ?? 'sale') === 'rent' ? 'selected' : '' }}>إيجار</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">الحي</label>
+                    <input type="text" name="district" class="form-control" value="{{ old('district', $lead->property->district ?? '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">رقم المخطط</label>
+                    <input type="text" name="plan_number" class="form-control" value="{{ old('plan_number', $lead->property->plan_number ?? '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">المساحة م²</label>
+                    <input type="number" name="area_sqm" class="form-control" step="0.01" min="0" value="{{ old('area_sqm', $lead->property->area_sqm ?? '') }}">
+                </div>
+            </div>
+            <div class="row mb-3" dir="rtl">
+                <div class="col-md-3">
+                    <label class="form-label">الواجهة</label>
+                    <select name="facing" class="form-select">
+                        <option value="">غير محدد</option>
+                        @foreach(['north' => 'شمال', 'south' => 'جنوب', 'east' => 'شرق', 'west' => 'غرب', 'north_east' => 'شمال شرقي', 'north_west' => 'شمال غربي', 'south_east' => 'جنوب شرقي', 'south_west' => 'جنوب غربي'] as $val => $label)
+                            <option value="{{ $val }}" {{ old('facing', $lead->property->facing ?? '') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">عرض الشارع (م)</label>
+                    <input type="number" name="street_width_m" class="form-control" step="0.01" min="0" value="{{ old('street_width_m', $lead->property->street_width_m ?? '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">عمر العقار</label>
+                    <input type="number" name="property_age_years" class="form-control" min="0" value="{{ old('property_age_years', $lead->property->property_age_years ?? '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">الأدوار</label>
+                    <input type="number" name="floors" class="form-control" min="0" value="{{ old('floors', $lead->property->floors ?? '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">الوحدات</label>
+                    <input type="number" name="units" class="form-control" min="0" value="{{ old('units', $lead->property->units ?? '') }}">
+                </div>
+            </div>
+            <div class="row mb-3" dir="rtl">
+                <div class="col-md-3">
+                    <input type="hidden" name="furnished" value="0">
+                    <label class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" name="furnished" value="1" {{ old('furnished', $lead->property->furnished ?? false) ? 'checked' : '' }}>
+                        <span class="form-check-label">مفروش</span>
+                    </label>
+                </div>
+                <div class="col-md-3">
+                    <input type="hidden" name="finance_eligible" value="0">
+                    <label class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" name="finance_eligible" value="1" {{ old('finance_eligible', $lead->property->finance_eligible ?? false) ? 'checked' : '' }}>
+                        <span class="form-check-label">يقبل التمويل</span>
+                    </label>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">خط العرض</label>
+                    <input type="number" name="latitude" class="form-control" step="0.0000001" min="-90" max="90" value="{{ old('latitude', $lead->property->latitude ?? '') }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">خط الطول</label>
+                    <input type="number" name="longitude" class="form-control" step="0.0000001" min="-180" max="180" value="{{ old('longitude', $lead->property->longitude ?? '') }}">
+                </div>
+            </div>
+            @endif
+
             @if(($businessMode ?? 'wholesale') === 'wholesale')
             <div class="row mb-3">
                 <div class="col-md-3">
