@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', ($businessMode ?? 'wholesale') === 'realestate' ? __('Transactions') : __('Pipeline'))
-@section('page-title', ($businessMode ?? 'wholesale') === 'realestate' ? __('Transaction Pipeline') : __('Deal Pipeline'))
+@section('title', ($businessMode ?? 'wholesale') === 'realestate' ? 'الصفقات' : __('Pipeline'))
+@section('page-title', ($businessMode ?? 'wholesale') === 'realestate' ? 'مسار الصفقات' : __('Deal Pipeline'))
 
 @push('styles')
 <style>
@@ -254,19 +254,20 @@
 @endpush
 
 @section('content')
+<div @if(($businessMode ?? 'wholesale') === 'realestate') dir="rtl" @endif>
 {{-- Filters --}}
 <div class="pipeline-filters">
     <div class="input-icon" style="max-width: 220px;">
         <span class="input-icon-addon">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
         </span>
-        <label for="pipeline-search" class="visually-hidden">{{ __('Search deals') }}</label>
-        <input type="text" id="pipeline-search" class="form-control" placeholder="{{ __('Search deals...') }}" value="{{ request('search') }}">
+        <label for="pipeline-search" class="visually-hidden">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'بحث في الصفقات' : __('Search deals') }}</label>
+        <input type="text" id="pipeline-search" class="form-control" placeholder="{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'ابحث بالعقار أو العميل...' : __('Search deals...') }}" value="{{ request('search') }}">
     </div>
     @if(auth()->user()->isAdmin() && $agents->count() > 1)
     <label for="pipeline-agent-filter" class="visually-hidden">{{ __('Filter by agent') }}</label>
     <select id="pipeline-agent-filter" class="form-select">
-        <option value="">{{ __('All Agents') }}</option>
+        <option value="">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'كل الوسطاء' : __('All Agents') }}</option>
         @foreach($agents as $agent)
             <option value="{{ $agent->id }}" {{ request('agent') == $agent->id ? 'selected' : '' }}>{{ $agent->name }}</option>
         @endforeach
@@ -274,11 +275,11 @@
     @endif
     <a href="{{ route('deals.export', request()->query()) }}" class="btn btn-outline-secondary btn-sm ms-auto">
         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><polyline points="7 11 12 16 17 11"/><line x1="12" y1="4" x2="12" y2="16"/></svg>
-        {{ __('Export CSV') }}
+        {{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تصدير CSV' : __('Export CSV') }}
     </a>
     <div class="text-secondary" style="font-size: 0.8rem;">
         @php $totalDeals = collect($deals)->flatten()->count(); @endphp
-        {{ $totalDeals }} {{ Str::plural('deal', $totalDeals) }} {{ __('in pipeline') }}
+        {{ ($businessMode ?? 'wholesale') === 'realestate' ? $totalDeals . ' صفقة في المسار' : $totalDeals . ' ' . Str::plural('deal', $totalDeals) . ' ' . __('in pipeline') }}
     </div>
 </div>
 
@@ -329,27 +330,37 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                     </div>
                     <div class="deal-card-body" data-deal-id="{{ $deal->id }}">
-                        <div class="deal-card-title">{{ $deal->lead->full_name ?? $deal->title }}</div>
+                        <div class="deal-card-title">
+                            {{ ($businessMode ?? 'wholesale') === 'realestate'
+                                ? ($deal->propertyRequest?->lead?->full_name ?? $deal->title)
+                                : ($deal->lead->full_name ?? $deal->title) }}
+                        </div>
                         <div class="deal-card-meta">
-                            @if($deal->lead && $deal->lead->property)
+                            @if(($businessMode ?? 'wholesale') === 'realestate' && $deal->property)
+                                {{ $deal->property->address }}
+                                @if($deal->property->district)
+                                    — {{ $deal->property->district }}
+                                @endif
+                                <br>
+                            @elseif($deal->lead && $deal->lead->property)
                                 {{ $deal->lead->property->address ?? '' }}<br>
                             @endif
                             @if($deal->contract_price)
-                                {{ __('Contract:') }} <span data-field="contract_price" data-raw-value="{{ $deal->contract_price }}">{{ Fmt::currency($deal->contract_price, 0) }}</span>
+                                {{ ($businessMode ?? 'wholesale') === 'realestate' ? 'قيمة الاتفاق:' : __('Contract:') }} <span data-field="contract_price" data-raw-value="{{ $deal->contract_price }}">{{ Fmt::currency($deal->contract_price, 0) }}</span>
                             @endif
                             @if($businessMode === 'wholesale' && $deal->assignment_fee)
                                 &middot; {{ __('Fee:') }} <span data-field="assignment_fee" data-raw-value="{{ $deal->assignment_fee }}">{{ Fmt::currency($deal->assignment_fee, 0) }}</span>
                             @elseif($businessMode === 'realestate' && $deal->total_commission)
-                                &middot; {{ __('Comm:') }} <span data-field="total_commission" data-raw-value="{{ $deal->total_commission }}">{{ Fmt::currency($deal->total_commission, 0) }}</span>
+                                &middot; العمولة: <span data-field="total_commission" data-raw-value="{{ $deal->total_commission }}">{{ Fmt::currency($deal->total_commission, 0) }}</span>
                             @endif
                             @if($deal->contract_price || ($businessMode === 'wholesale' ? $deal->assignment_fee : $deal->total_commission))<br>@endif
-                            @if($deal->stage === 'under_contract' && $deal->due_diligence_end_date)
+                            @if(($businessMode ?? 'wholesale') === 'wholesale' && $deal->stage === 'under_contract' && $deal->due_diligence_end_date)
                                 <span class="badge {{ $deal->is_due_diligence_urgent ? 'bg-red-lt' : 'bg-cyan-lt' }} mt-1" style="color:#fff;">
                                     {{ __('DD:') }} {{ $deal->due_diligence_days_remaining }}{{ __('d left') }}
                                 </span><br>
                             @endif
                             <span>{{ $deal->agent->name ?? '' }}</span>
-                            &middot; <span class="deal-age-badge {{ $daysInStage > 10 ? 'critical' : ($daysInStage > 5 ? 'warning' : '') }}">{{ $daysInStage }}{{ __('d in stage') }}</span>
+                            &middot; <span class="deal-age-badge {{ $daysInStage > 10 ? 'critical' : ($daysInStage > 5 ? 'warning' : '') }}">{{ ($businessMode ?? 'wholesale') === 'realestate' ? $daysInStage . ' يوم في المرحلة' : $daysInStage . __('d in stage') }}</span>
                         </div>
                     </div>
                     <div class="dropdown move-dropdown">
@@ -367,7 +378,7 @@
                     </div>
                 </div>
                 @empty
-                <div class="stage-empty">{{ __('No deals in this stage') }}</div>
+                <div class="stage-empty">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'لا توجد صفقات في هذه المرحلة' : __('No deals in this stage') }}</div>
                 @endforelse
             </div>
         </div>
@@ -379,7 +390,7 @@
 <div class="slide-over-backdrop" id="dealBackdrop"></div>
 <div class="slide-over" id="dealPanel">
     <div class="d-flex justify-content-between mb-3">
-        <h3 id="panel-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? __('Transaction Details') : __('Deal Details') }}</h3>
+        <h3 id="panel-title">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'تفاصيل الصفقة' : __('Deal Details') }}</h3>
         <button class="btn btn-ghost-secondary btn-sm" id="panel-close" aria-label="{{ __('Close panel') }}">&times;</button>
     </div>
     <div id="panel-content">
@@ -1123,4 +1134,5 @@ function markPFailed(btn) {
 </div>
 @endif
 
+</div>
 @endsection
