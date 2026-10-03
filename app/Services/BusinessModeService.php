@@ -352,7 +352,8 @@ class BusinessModeService
                 'asking_price', 'bedrooms', 'bathrooms', 'square_footage', 'lot_size',
                 'year_built', 'property_type', 'transaction_type', 'district', 'plan_number',
                 'area_sqm', 'facing', 'street_width_m', 'property_age_years',
-                'finance_eligible', 'price_per_sqm', 'latitude', 'longitude',
+                'floors', 'units', 'furnished', 'finance_eligible',
+                'price_per_sqm', 'latitude', 'longitude',
             ];
         }
 
