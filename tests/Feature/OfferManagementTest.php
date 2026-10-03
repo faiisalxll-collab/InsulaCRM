@@ -17,7 +17,7 @@ class OfferManagementTest extends TestCase
             'buyer_agent_name' => 'Jane Agent',
             'offer_price' => 350000,
             'earnest_money' => 5000,
-            'financing_type' => 'conventional',
+            'financing_type' => 'bank_finance',
             'contingencies' => ['inspection', 'appraisal'],
             'expiration_date' => '2026-04-20',
             'notes' => 'Strong offer',
@@ -29,7 +29,7 @@ class OfferManagementTest extends TestCase
             'deal_id' => $deal->id,
             'buyer_name' => 'John Doe',
             'offer_price' => '350000.00',
-            'financing_type' => 'conventional',
+            'financing_type' => 'bank_finance',
         ]);
     }
 
