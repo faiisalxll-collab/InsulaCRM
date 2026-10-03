@@ -233,4 +233,26 @@ class SaudiReportsTest extends TestCase
             ->assertDontSee('حي-خاص-بباء');
     }
 
+
+    public function test_saudi_agent_can_open_own_report(): void
+    {
+        $this->createTenantWithAdmin($this->realEstateTenant());
+        $agent = $this->createUserWithRole('agent');
+
+        $this->actingAs($agent)
+            ->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('تقارير المكتب العقاري');
+    }
+
+    public function test_wholesale_agent_cannot_open_reports(): void
+    {
+        $this->createTenantWithAdmin(['business_mode' => 'wholesale']);
+        $agent = $this->createUserWithRole('agent');
+
+        $this->actingAs($agent)
+            ->get(route('reports.index'))
+            ->assertForbidden();
+    }
+
 }
