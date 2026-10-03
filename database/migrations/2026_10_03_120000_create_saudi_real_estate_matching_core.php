@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -9,6 +10,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('properties', function (Blueprint $table) {
+            // The original schema used a US-only enum. Saudi property types and
+            // tenant-defined custom types need an extensible string column.
+            $table->string('property_type', 40)->default('single_family')->change();
             $table->string('transaction_type', 20)->default('sale')->after('property_type');
             $table->string('district')->nullable()->after('city');
             $table->string('plan_number')->nullable()->after('district');
@@ -16,7 +20,10 @@ return new class extends Migration
             $table->string('facing', 30)->nullable()->after('area_sqm');
             $table->decimal('street_width_m', 6, 2)->nullable()->after('facing');
             $table->unsignedSmallInteger('property_age_years')->nullable()->after('street_width_m');
-            $table->boolean('finance_eligible')->nullable()->after('property_age_years');
+            $table->unsignedSmallInteger('floors')->nullable()->after('property_age_years');
+            $table->unsignedSmallInteger('units')->nullable()->after('floors');
+            $table->boolean('furnished')->nullable()->after('units');
+            $table->boolean('finance_eligible')->nullable()->after('furnished');
             $table->decimal('price_per_sqm', 12, 2)->nullable()->after('finance_eligible');
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
@@ -79,7 +86,18 @@ return new class extends Migration
         Schema::table('properties', function (Blueprint $table) {
             $table->dropIndex(['tenant_id', 'city', 'district']);
             $table->dropIndex(['tenant_id', 'transaction_type', 'property_type']);
-            $table->dropColumn(['transaction_type','district','plan_number','area_sqm','facing','street_width_m','property_age_years','finance_eligible','price_per_sqm','latitude','longitude']);
+            $table->dropColumn(['transaction_type','district','plan_number','area_sqm','facing','street_width_m','property_age_years','floors','units','furnished','finance_eligible','price_per_sqm','latitude','longitude']);
+        });
+
+        // Preserve rollback viability even if Saudi/custom slugs were stored.
+        DB::table('properties')
+            ->whereNotIn('property_type', ['single_family', 'multi_family', 'commercial', 'land', 'other'])
+            ->update(['property_type' => 'other']);
+
+        Schema::table('properties', function (Blueprint $table) {
+            $table->enum('property_type', ['single_family', 'multi_family', 'commercial', 'land', 'other'])
+                ->default('single_family')
+                ->change();
         });
     }
 };
