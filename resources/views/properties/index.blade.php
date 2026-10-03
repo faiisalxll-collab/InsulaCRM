@@ -31,6 +31,11 @@
                 <div class="text-muted small mt-1">العقارات المعروضة للبيع والإيجار مع بياناتها ومطابقاتها النشطة.</div>
             @endif
         </div>
+        @if($isRealEstate)
+        <div class="card-actions">
+            <a href="{{ route('properties.create') }}" class="btn btn-primary">إضافة عقار</a>
+        </div>
+        @endif
     </div>
 
     <div class="card-body border-bottom py-3">
