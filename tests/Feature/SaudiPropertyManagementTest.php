@@ -340,4 +340,32 @@ class SaudiPropertyManagementTest extends TestCase
         ]);
     }
 
+
+    public function test_saudi_property_input_does_not_persist_legacy_mls_number(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+
+        $this->post(route('properties.manage.store'), [
+            'lead_id' => $owner->id,
+            'address' => 'عقار بدون MLS',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'district' => 'نمار',
+            'area_sqm' => 300,
+            'list_price' => 1500000,
+            'listing_status' => 'active',
+            'mls_number' => 'LEGACY-MLS-SHOULD-NOT-SAVE',
+        ])->assertRedirect();
+
+        $property = Property::withoutGlobalScopes()
+            ->where('tenant_id', $this->tenant->id)
+            ->where('address', 'عقار بدون MLS')
+            ->firstOrFail();
+
+        $this->assertNull($property->mls_number);
+    }
+
 }
