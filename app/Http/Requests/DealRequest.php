@@ -25,6 +25,8 @@ class DealRequest extends FormRequest
             'buyer_commission_pct' => 'nullable|numeric|min:0|max:100',
             'total_commission' => 'nullable|numeric|min:0',
             'brokerage_split_pct' => 'nullable|numeric|min:0|max:100',
+            'commission_status' => 'nullable|in:pending,due,paid',
+            'commission_paid_at' => 'nullable|date',
             'mls_number' => 'nullable|string|max:30',
             'listing_date' => 'nullable|date',
             'days_on_market' => 'nullable|integer|min:0',
