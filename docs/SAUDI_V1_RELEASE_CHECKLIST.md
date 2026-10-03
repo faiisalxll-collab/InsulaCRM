@@ -9,9 +9,13 @@ Client → Property / Property Request → Match → Showing → Offer / Negotia
 ## Required product checks
 
 - [x] Saudi clients can be created, edited, viewed, and assigned to an authorized broker.
+- [x] Every new Saudi property request must be linked to a client.
+- [x] Every standalone Saudi property must be linked to an owner/client; nested owner-property entry derives that owner safely from the route.
 - [x] One client/owner can have multiple properties.
 - [x] One client can have multiple property requests.
 - [x] Saudi properties support sale/rent, district, plan, area, price, facing direction, street width, age, floors, units, furnishing, finance eligibility, coordinates, and photos.
+- [x] Saudi address normalization preserves local Arabic/English address tokens and does not apply US street/state conventions.
+- [x] Legacy MLS input is not persisted through Saudi property forms.
 - [x] Property photo upload/delete is tenant-scoped and removes stored files when the property is deleted.
 - [x] Requests support sale/rent criteria and are broker-scoped.
 - [x] Matching is deterministic, explainable, tenant-scoped, and reverse-refreshes on property/request changes.
@@ -19,6 +23,8 @@ Client → Property / Property Request → Match → Showing → Offer / Negotia
 - [x] A match can open a prefilled showing directly.
 - [x] A showing can start an idempotent deal tied to both the property and property request.
 - [x] Offers support accept, reject, and counter.
+- [x] Saudi offer financing is limited to cash, bank finance, or other; FHA/VA/Conventional remain legacy wholesale-only values.
+- [x] Saudi deal updates do not persist wholesale-only fields such as assignment fee, earnest money, MLS, inspection period, or due-diligence dates.
 - [x] Accepting an offer moves the deal to agreement, pauses the request, and marks the property pending.
 - [x] Successful sale closes the request and marks the property sold with price/date.
 - [x] Successful rental closes the request and marks the property leased.
@@ -28,6 +34,9 @@ Client → Property / Property Request → Match → Showing → Offer / Negotia
 - [x] Dashboard is broker-scoped for non-admin users.
 - [x] Reports are broker-scoped for non-admin users.
 - [x] Saudi V1 navigation exposes only the core workflow.
+- [x] Global search in Saudi V1 searches clients, directly linked transactions, properties, and property requests; broker results are ownership-scoped.
+- [x] Global search in Saudi V1 does not expose the legacy wholesale Buyer database.
+- [x] Legacy Buyer, Disposition, Investor Packet, ARV/Comparable Sales, field-scout intake, document generation, CMA, and legacy AI surfaces are not exposed as Saudi V1 workflow.
 - [x] Wholesale mode remains isolated from Saudi V1 behavior.
 
 ## Security gate
@@ -50,7 +59,7 @@ Before pilot deployment:
 - [x] Migration rollback and re-apply pass on disposable database services.
 - [x] MySQL 8.4 and MariaDB 11.4 migration behavior passes for the Saudi V1 migration set.
 
-Verified on Saudi V1 code HEAD `db97b2867175adeea5f3a6fa2b585acb0d91f91a` by GitHub Actions run `37137788570`: the tenant-isolation step, full test suite, MySQL migration gate, and MariaDB migration gate all completed successfully. Both database gates run the full migration set, roll back the five Saudi V1 migrations, re-apply them, and verify migration status.
+Verified on hardened Saudi V1 code HEAD `1cc0059e16d65f3d27ddff4cf82c8f6a74358672` by GitHub Actions run `37139930019`: the tenant-isolation step, full test suite, MySQL 8.4 migration gate, and MariaDB 11.4 migration gate all completed successfully. Both database gates run the full migration set, roll back the five Saudi V1 migrations, re-apply them, and verify migration status. This verified baseline includes the Saudi-aware global search, broker-scoped search isolation, localized address normalization, legacy-route isolation, Saudi-only offer financing validation, removal of legacy CMA/AI surfaces from Saudi property pages, and the end-to-end Saudi pilot flow test.
 
 ## Pilot deployment gate
 
