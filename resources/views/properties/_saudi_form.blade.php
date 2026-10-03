@@ -13,6 +13,7 @@
         'active' => 'نشط',
         'pending' => 'معلّق',
         'sold' => 'مباع',
+        'leased' => 'مؤجر',
         'withdrawn' => 'مسحوب',
         'expired' => 'منتهي',
     ];
