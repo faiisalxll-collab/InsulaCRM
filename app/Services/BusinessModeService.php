@@ -544,16 +544,6 @@ class BusinessModeService
 
     public static function getDefaultChecklistItems(): array
     {
-        return [
-            ['item_key' => 'earnest_money_deposit', 'label' => __('Earnest Money Deposit'), 'sort_order' => 1],
-            ['item_key' => 'inspection',            'label' => __('Home Inspection'),        'sort_order' => 2],
-            ['item_key' => 'appraisal',             'label' => __('Appraisal'),              'sort_order' => 3],
-            ['item_key' => 'financing',             'label' => __('Financing Contingency'),  'sort_order' => 4],
-            ['item_key' => 'title_search',          'label' => __('Title Search & Insurance'), 'sort_order' => 5],
-            ['item_key' => 'survey',                'label' => __('Property Survey'),        'sort_order' => 6],
-            ['item_key' => 'hoa_docs',              'label' => __('HOA Documents Review'),   'sort_order' => 7],
-            ['item_key' => 'home_warranty',         'label' => __('Home Warranty'),          'sort_order' => 8],
-            ['item_key' => 'final_walkthrough',     'label' => __('Final Walkthrough'),      'sort_order' => 9],
-        ];
+        return \App\Models\TransactionChecklist::DEFAULT_ITEMS;
     }
 }
