@@ -303,4 +303,26 @@ class SaudiPropertyRequestWorkflowTest extends TestCase
         $this->assertDatabaseHas('property_requests', ['id' => $propertyRequest->id]);
     }
 
+
+    public function test_saudi_property_request_requires_a_client(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $this->from(route('property-requests.create'))
+            ->post(route('property-requests.store'), [
+                'agent_id' => $this->adminUser->id,
+                'transaction_type' => 'sale',
+                'property_type' => 'villa',
+                'city' => 'الرياض',
+                'districts_csv' => 'نمار',
+                'max_price' => 1500000,
+                'finance_required' => '0',
+                'status' => 'active',
+            ])
+            ->assertRedirect(route('property-requests.create'))
+            ->assertSessionHasErrors('lead_id');
+
+        $this->assertDatabaseCount('property_requests', 0);
+    }
+
 }
