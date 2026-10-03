@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Deal;
+use App\Models\DealOffer;
 use App\Models\Property;
 use App\Models\PropertyRequest;
 use App\Models\Showing;
@@ -608,6 +609,145 @@ class SaudiDealWorkflowTest extends TestCase
             ->assertOk()
             ->assertSee('صفقة: خالد المشتري')
             ->assertSee('مالك العقار');
+    }
+
+
+    public function test_saudi_deal_page_renders_bank_finance_and_hides_legacy_ai_tools(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+        $this->tenant->update([
+            'ai_enabled' => true,
+            'ai_briefings_enabled' => true,
+        ]);
+
+        $owner = $this->createLead(['first_name' => 'مالك', 'last_name' => 'واضح']);
+        $client = $this->createLead(['first_name' => 'عميل', 'last_name' => 'واضح']);
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار تمويل واضح',
+            'city' => 'الرياض',
+            'district' => 'نمار',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        $deal = Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $property->id,
+            'property_request_id' => $propertyRequest->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة تمويل',
+            'stage' => 'offer_received',
+        ]);
+
+        DealOffer::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'deal_id' => $deal->id,
+            'buyer_name' => $client->full_name,
+            'offer_price' => 1500000,
+            'financing_type' => 'bank_finance',
+            'status' => 'pending',
+        ]);
+
+        $this->get(route('deals.show', $deal))
+            ->assertOk()
+            ->assertSee('عقار تمويل واضح')
+            ->assertSee('مالك واضح')
+            ->assertSee('عميل واضح')
+            ->assertSee('تمويل بنكي')
+            ->assertDontSee('AI Analysis')
+            ->assertDontSee('Marketing Kit')
+            ->assertDontSee('AI Transaction Briefing');
+    }
+
+    public function test_saudi_deal_export_uses_direct_property_and_request_client(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead(['first_name' => 'مالك', 'last_name' => 'التصدير']);
+        $client = $this->createLead(['first_name' => 'عميل', 'last_name' => 'التصدير']);
+
+        $targetProperty = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار التصدير المستهدف',
+            'city' => 'الرياض',
+            'district' => 'نمار',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $otherProperty = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار المالك الآخر',
+            'city' => 'الرياض',
+            'district' => 'العوالي',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $targetProperty->id,
+            'property_request_id' => $propertyRequest->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة التصدير المستهدفة',
+            'stage' => 'offer_received',
+            'contract_price' => 1450000,
+            'total_commission' => 36250,
+            'commission_status' => 'due',
+        ]);
+
+        Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $otherProperty->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة أخرى',
+            'stage' => 'offer_received',
+        ]);
+
+        $response = $this->get(route('deals.export', ['search' => 'التصدير المستهدف']))
+            ->assertOk();
+
+        $csv = $response->streamedContent();
+
+        $this->assertStringContainsString('العميل', $csv);
+        $this->assertStringContainsString('المالك', $csv);
+        $this->assertStringContainsString('العقار', $csv);
+        $this->assertStringContainsString('عميل التصدير', $csv);
+        $this->assertStringContainsString('مالك التصدير', $csv);
+        $this->assertStringContainsString('عقار التصدير المستهدف', $csv);
+        $this->assertStringNotContainsString('عقار المالك الآخر', $csv);
+        $this->assertStringNotContainsString('صفقة أخرى', $csv);
     }
 
 }
