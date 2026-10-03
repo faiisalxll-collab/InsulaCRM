@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Security;
 
+use App\Models\Activity;
+use App\Models\Buyer;
 use App\Models\Lead;
 use App\Models\Property;
 use App\Models\Role;
@@ -157,6 +159,76 @@ class TenantApiIsolationTest extends TestCase
             'tenant_id' => $this->officeA->id,
             'lead_id' => $lead->id,
         ]);
+    }
+
+
+    public function test_office_a_cannot_read_office_b_buyer_by_id(): void
+    {
+        $buyer = Buyer::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeB->id,
+            'first_name' => 'Private',
+            'last_name' => 'Buyer',
+            'email' => 'private-buyer@example.test',
+        ]);
+
+        $this->getJson("/api/v1/buyers/{$buyer->id}", $this->headersFor($this->officeA))
+            ->assertNotFound();
+    }
+
+    public function test_buyer_index_does_not_leak_another_office(): void
+    {
+        Buyer::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeA->id,
+            'first_name' => 'Visible',
+            'last_name' => 'Buyer',
+            'email' => 'visible@example.test',
+        ]);
+        Buyer::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeB->id,
+            'first_name' => 'Secret',
+            'last_name' => 'Buyer',
+            'email' => 'secret@example.test',
+        ]);
+
+        $response = $this->getJson('/api/v1/buyers?search=Buyer', $this->headersFor($this->officeA))
+            ->assertOk();
+
+        $response->assertSee('visible@example.test');
+        $response->assertDontSee('secret@example.test');
+    }
+
+    public function test_activity_index_does_not_leak_another_office(): void
+    {
+        $role = Role::where('name', 'admin')->firstOrFail();
+        $agentA = User::factory()->create([
+            'tenant_id' => $this->officeA->id,
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+        $agentB = User::factory()->create([
+            'tenant_id' => $this->officeB->id,
+            'role_id' => $role->id,
+            'is_active' => true,
+        ]);
+
+        Activity::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeA->id,
+            'agent_id' => $agentA->id,
+            'type' => 'note',
+            'subject' => 'Visible activity',
+        ]);
+        Activity::withoutGlobalScopes()->create([
+            'tenant_id' => $this->officeB->id,
+            'agent_id' => $agentB->id,
+            'type' => 'note',
+            'subject' => 'Secret activity',
+        ]);
+
+        $response = $this->getJson('/api/v1/activities', $this->headersFor($this->officeA))
+            ->assertOk();
+
+        $response->assertSee('Visible activity');
+        $response->assertDontSee('Secret activity');
     }
 
     private function makeLead(Tenant $tenant, string $firstName, string $lastName): Lead
