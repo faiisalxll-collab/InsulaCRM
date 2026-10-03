@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $propertyTypes = AppServicesCustomFieldService::getOptions('property_type');
+    $propertyTypes = \App\Services\CustomFieldService::getOptions('property_type');
 @endphp
 
 <div dir="rtl">
@@ -208,7 +208,7 @@
                         <tbody>
                         @forelse($showingOutcomes as $row)
                             <tr>
-                                <td>{{ AppModelsShowing::OUTCOMES[$row->outcome] ?? $row->outcome }}</td>
+                                <td>{{ \App\Models\Showing::OUTCOMES[$row->outcome] ?? $row->outcome }}</td>
                                 <td>{{ number_format($row->count) }}</td>
                             </tr>
                         @empty
@@ -229,7 +229,7 @@
                         <tbody>
                         @forelse($dealStages as $row)
                             <tr>
-                                <td>{{ AppModelsDeal::stageLabel($row->stage) }}</td>
+                                <td>{{ \App\Models\Deal::stageLabel($row->stage) }}</td>
                                 <td>{{ number_format($row->count) }}</td>
                             </tr>
                         @empty
