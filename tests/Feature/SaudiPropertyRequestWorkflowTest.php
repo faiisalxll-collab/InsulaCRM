@@ -203,7 +203,7 @@ class SaudiPropertyRequestWorkflowTest extends TestCase
         $this->get($showUrl)
             ->assertOk()
             ->assertSee('جدولة معاينة')
-            ->assertSee($scheduleUrl, false);
+            ->assertSee($scheduleUrl);
 
         $this->get($scheduleUrl)
             ->assertOk()
