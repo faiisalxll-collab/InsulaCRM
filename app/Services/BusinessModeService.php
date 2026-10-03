@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Tenant;
+use App\Models\Showing;
 
 class BusinessModeService
 {
@@ -519,12 +520,7 @@ class BusinessModeService
 
     public static function getShowingOutcomes(): array
     {
-        return [
-            'interested'           => __('Interested'),
-            'not_interested'       => __('Not Interested'),
-            'made_offer'           => __('Made Offer'),
-            'needs_second_showing' => __('Needs Second Showing'),
-        ];
+        return Showing::OUTCOMES;
     }
 
     // ─── Offer Management Helpers ───────────────────────────
@@ -532,11 +528,9 @@ class BusinessModeService
     public static function getFinancingTypes(): array
     {
         return [
-            'cash'         => __('Cash'),
-            'conventional' => __('Conventional'),
-            'fha'          => __('FHA'),
-            'va'           => __('VA'),
-            'other'        => __('Other'),
+            'cash' => 'نقدي',
+            'bank_finance' => 'تمويل بنكي',
+            'other' => 'أخرى',
         ];
     }
 
