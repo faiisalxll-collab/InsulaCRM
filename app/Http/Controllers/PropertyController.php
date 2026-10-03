@@ -13,6 +13,7 @@ use App\Services\ZipTimezoneService;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class PropertyController extends Controller
 {
@@ -243,7 +244,7 @@ class PropertyController extends Controller
         $uploaded = 0;
 
         foreach ($request->file('photos') as $index => $file) {
-            $filename = uniqid('property_') . '.' . strtolower($file->getClientOriginalExtension());
+            $filename = (string) Str::uuid() . '.' . strtolower($file->getClientOriginalExtension());
             $path = $file->storeAs(
                 "property-photos/{$property->tenant_id}/{$property->id}",
                 $filename,
