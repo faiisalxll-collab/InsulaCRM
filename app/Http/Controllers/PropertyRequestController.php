@@ -19,7 +19,7 @@ class PropertyRequestController extends Controller
         $this->authorize('viewAny', PropertySearchRequest::class);
 
         $query = PropertySearchRequest::with(['lead', 'agent'])
-            ->withCount(['matches as eligible_matches_count' => fn ($q) => $q->where('status', 'eligible')]);
+            ->withCount(['matches as eligible_matches_count' => fn ($q) => $q->visibleTo(auth()->user())->where('status', 'eligible')]);
 
         if (! auth()->user()->isAdmin()) {
             $query->where('agent_id', auth()->id());
@@ -99,7 +99,7 @@ class PropertyRequestController extends Controller
         $propertyRequest->load(['lead', 'agent']);
         $propertyRequest->loadCount(['showings', 'deals']);
 
-        $matches = $propertyRequest->matches()
+        $matches = $propertyRequest->matches()->visibleTo(auth()->user())
             ->with(['property.lead'])
             ->where('status', 'eligible')
             ->orderByDesc('match_score')

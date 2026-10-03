@@ -29,6 +29,16 @@ class PropertyMatch extends Model
         static::addGlobalScope(new TenantScope);
     }
 
+    public function scopeVisibleTo($query, User $user)
+    {
+        $query->where('property_matches.tenant_id', $user->tenant_id);
+        if (\App\Services\BusinessModeService::isRealEstate($user->tenant) && ! $user->isAdmin()) {
+            $query->whereHas('request', fn ($q) => $q->where('agent_id', $user->id))
+                ->whereHas('property.lead', fn ($q) => $q->where('agent_id', $user->id));
+        }
+        return $query;
+    }
+
     public function request() { return $this->belongsTo(PropertyRequest::class, 'property_request_id'); }
     public function property() { return $this->belongsTo(Property::class); }
 }

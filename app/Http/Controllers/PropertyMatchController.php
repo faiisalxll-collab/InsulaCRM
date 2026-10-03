@@ -13,7 +13,7 @@ class PropertyMatchController extends Controller
     {
         $this->authorize('viewAny', PropertyMatch::class);
 
-        $query = PropertyMatch::with(['property', 'request.lead', 'request.agent'])
+        $query = PropertyMatch::visibleTo(auth()->user())->with(['property', 'request.lead', 'request.agent'])
             ->where('status', 'eligible')
             ->where('hard_constraints_passed', true);
 

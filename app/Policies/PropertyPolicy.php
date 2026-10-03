@@ -9,7 +9,8 @@ class PropertyPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isAgent() || $user->isFieldScout();
+        return $user->isAdmin() || $user->isAgent()
+            || (! \App\Services\BusinessModeService::isRealEstate($user->tenant) && $user->isFieldScout());
     }
 
     public function view(User $user, Property $property): bool
@@ -22,11 +23,13 @@ class PropertyPolicy
             return false;
         }
 
-        if ($user->isAdmin() || $user->isAcquisitionAgent() || $user->isFieldScout()) {
+        if ($user->isAdmin() || (! \App\Services\BusinessModeService::isRealEstate($user->tenant)
+            && ($user->isAcquisitionAgent() || $user->isFieldScout()))) {
             return true;
         }
 
-        return $property->lead_id === null || (int) $property->lead?->agent_id === (int) $user->id;
+        return (int) $property->lead?->agent_id === (int) $user->id
+            || ($property->lead_id === null && ! \App\Services\BusinessModeService::isRealEstate($user->tenant));
     }
 
     public function create(User $user): bool

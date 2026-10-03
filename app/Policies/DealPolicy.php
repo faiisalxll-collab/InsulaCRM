@@ -9,7 +9,8 @@ class DealPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin() || $user->isAgent() || $user->isDispositionAgent();
+        return $user->isAdmin() || $user->isAgent()
+            || (! \App\Services\BusinessModeService::isRealEstate($user->tenant) && $user->isDispositionAgent());
     }
 
     public function create(User $user): bool
@@ -53,7 +54,7 @@ class DealPolicy
             return false;
         }
 
-        if ($user->isAdmin() || $user->isDispositionAgent()) {
+        if ($user->isAdmin() || (! \App\Services\BusinessModeService::isRealEstate($user->tenant) && $user->isDispositionAgent())) {
             return true;
         }
 

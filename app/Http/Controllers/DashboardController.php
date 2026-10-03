@@ -113,7 +113,7 @@ class DashboardController extends Controller
     {
         $properties = Property::query();
         $requests = PropertyRequest::query();
-        $matches = PropertyMatch::query();
+        $matches = PropertyMatch::visibleTo($user);
         $showings = Showing::query();
         $deals = Deal::query();
 
@@ -140,8 +140,8 @@ class DashboardController extends Controller
             ->count();
         $closedThisMonth = (clone $deals)
             ->where('stage', 'closed_won')
-            ->whereMonth('updated_at', now()->month)
-            ->whereYear('updated_at', now()->year)
+            ->whereMonth('stage_changed_at', now()->month)
+            ->whereYear('stage_changed_at', now()->year)
             ->count();
         $commissionDue = (clone $deals)
             ->where('commission_status', 'due')

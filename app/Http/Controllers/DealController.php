@@ -240,6 +240,9 @@ class DealController extends Controller
             403
         );
 
+        $this->authorize('view', $property);
+        $this->authorize('view', $propertyRequest);
+
         $clientName = trim((string) ($propertyRequest->lead?->full_name ?? 'عميل'));
 
         $deal = Deal::firstOrCreate(
@@ -255,6 +258,8 @@ class DealController extends Controller
                 'stage' => 'offer_received',
             ]
         );
+
+        $this->authorize('view', $deal);
 
         if (! $showing->deal_id) {
             $showing->update(['deal_id' => $deal->id]);

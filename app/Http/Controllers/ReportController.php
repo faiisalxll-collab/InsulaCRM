@@ -265,7 +265,7 @@ class ReportController extends Controller
         $clients = Lead::whereBetween('created_at', [$from, $toEnd]);
         $properties = Property::whereBetween('created_at', [$from, $toEnd]);
         $requests = PropertySearchRequest::whereBetween('created_at', [$from, $toEnd]);
-        $matches = PropertyMatch::whereBetween('evaluated_at', [$from, $toEnd]);
+        $matches = PropertyMatch::visibleTo($user)->whereBetween('evaluated_at', [$from, $toEnd]);
         $showings = Showing::whereBetween('showing_date', [$from, $to]);
         $offers = DealOffer::whereBetween('created_at', [$from, $toEnd]);
         $deals = Deal::query();

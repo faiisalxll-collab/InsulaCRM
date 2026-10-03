@@ -25,7 +25,7 @@ class PropertyController extends Controller
         $this->authorize('viewAny', Property::class);
 
         $query = Property::with('lead')
-            ->withCount(['matches as eligible_matches_count' => fn ($q) => $q->where('status', 'eligible')]);
+            ->withCount(['matches as eligible_matches_count' => fn ($q) => $q->visibleTo(auth()->user())->where('status', 'eligible')]);
 
         if (auth()->user()->isAgent()) {
             $query->whereHas('lead', function ($q) {
@@ -320,7 +320,7 @@ class PropertyController extends Controller
         $this->authorize('view', $property);
         $property->load(['lead', 'photos.uploader']);
         $property->loadCount([
-            'matches as eligible_matches_count' => fn ($query) => $query->where('status', 'eligible'),
+            'matches as eligible_matches_count' => fn ($query) => $query->visibleTo(auth()->user())->where('status', 'eligible'),
             'showings',
             'deals',
         ]);

@@ -44,7 +44,9 @@ class LeadPolicy
 
     public function claim(User $user, Lead $lead): bool
     {
-        return $this->ownsOrCanManage($user, $lead) || $lead->agent_id === null;
+        return (int) $user->tenant_id === (int) $lead->tenant_id
+            && $user->canManageLeads()
+            && ($this->ownsOrCanManage($user, $lead) || $lead->agent_id === null);
     }
 
     private function ownsOrCanManage(User $user, Lead $lead): bool

@@ -52,7 +52,14 @@ class ShowingRequest extends FormRequest
             'property_request_id' => ['nullable', $requestExists],
             'property_id' => [
                 $creating ? 'required' : 'sometimes',
-                Rule::exists('properties', 'id')->where('tenant_id', $tenantId),
+                Rule::exists('properties', 'id')->where(function ($query) use ($user, $tenantId) {
+                    $query->where('tenant_id', $tenantId);
+                    if (! $user->isAdmin()) {
+                        $query->whereIn('lead_id', function ($owners) use ($user, $tenantId) {
+                            $owners->select('id')->from('leads')->where('tenant_id', $tenantId)->where('agent_id', $user->id);
+                        });
+                    }
+                }),
             ],
             'lead_id' => ['nullable', $leadExists],
             'deal_id' => ['nullable', Rule::exists('deals', 'id')->where(function ($query) use ($user, $tenantId) {

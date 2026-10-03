@@ -23,6 +23,7 @@ class PropertyMatchPolicy
         }
 
         return $user->isAgent()
-            && (int) $match->request?->agent_id === (int) $user->id;
+            && (int) $match->request?->agent_id === (int) $user->id
+            && (int) $match->property?->lead?->agent_id === (int) $user->id;
     }
 }
