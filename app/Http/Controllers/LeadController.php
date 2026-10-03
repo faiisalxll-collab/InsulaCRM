@@ -224,6 +224,8 @@ class LeadController extends Controller
                 'properties',
                 'propertyRequests.matches',
                 'propertyRequests.deals.property',
+                'deals.property',
+                'deals.propertyRequest.lead',
                 'activities.agent',
                 'tasks',
             ]);
