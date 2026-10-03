@@ -113,6 +113,20 @@ class Lead extends Model
         return $this->hasOne(Property::class);
     }
 
+    /**
+     * Saudi brokerage can manage multiple listings for the same owner.
+     * Keep property() above for legacy wholesale compatibility.
+     */
+    public function properties()
+    {
+        return $this->hasMany(Property::class);
+    }
+
+    public function propertyRequests()
+    {
+        return $this->hasMany(PropertyRequest::class);
+    }
+
     public function campaign()
     {
         return $this->belongsTo(Campaign::class);
