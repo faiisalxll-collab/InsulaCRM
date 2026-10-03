@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Scopes\TenantScope;
 use App\Services\AddressNormalizationService;
+use App\Services\PropertyMatchingService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -90,6 +91,18 @@ class Property extends Model
             }
             if ($property->isDirty('zip_code') && $property->zip_code) {
                 $property->zip_code = AddressNormalizationService::normalizeZipCode($property->zip_code);
+            }
+        });
+
+        static::saved(function (Property $property) {
+            $matchingFields = [
+                'transaction_type','property_type','city','district','area_sqm','list_price',
+                'asking_price','bedrooms','street_width_m','facing','property_age_years',
+                'finance_eligible','listing_status',
+            ];
+
+            if ($property->wasRecentlyCreated || $property->wasChanged($matchingFields)) {
+                app(PropertyMatchingService::class)->refreshForProperty($property);
             }
         });
     }
