@@ -36,6 +36,8 @@ class SaudiPropertyMatchingTest extends TestCase
         $this->assertTrue($result['hard_constraints_passed']);
         $this->assertSame(100, $result['match_score']);
         $this->assertContains('district', $result['match_reasons']);
+        $this->assertContains('facing', $result['match_reasons']);
+        $this->assertNotContains('frontage', $result['match_reasons']);
         $this->assertSame([], $result['rejection_reasons']);
     }
 
