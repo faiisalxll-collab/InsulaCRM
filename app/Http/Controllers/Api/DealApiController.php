@@ -56,6 +56,10 @@ class DealApiController extends Controller
     {
         $tenant = $request->attributes->get('tenant');
 
+        // Legacy API writes do not implement the linked Saudi transaction lifecycle.
+        // Keep V1 mutations on the authorized showing / deal workflow.
+        abort_if(BusinessModeService::isRealEstate($tenant), 404);
+
         $isRE = BusinessModeService::isRealEstate($tenant);
 
         $rules = [
@@ -126,6 +130,10 @@ class DealApiController extends Controller
     public function update(Request $request, int $id)
     {
         $tenant = $request->attributes->get('tenant');
+
+        // Legacy API writes do not implement the linked Saudi transaction lifecycle.
+        // Keep V1 mutations on the authorized showing / deal workflow.
+        abort_if(BusinessModeService::isRealEstate($tenant), 404);
 
         $deal = Deal::withoutGlobalScopes()
             ->where('tenant_id', $tenant->id)

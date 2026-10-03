@@ -126,7 +126,9 @@
                         </span>
                         @if($offer->financing_type)
                             <span class="badge bg-cyan-lt">
-                                {{ \App\Models\DealOffer::FINANCING_TYPES[$offer->financing_type] ?? $offer->financing_type }}
+                                {{ \App\Services\BusinessModeService::isRealEstate()
+                                    ? (\App\Models\DealOffer::SAUDI_FINANCING_TYPES[$offer->financing_type] ?? 'تمويل سابق')
+                                    : (\App\Models\DealOffer::FINANCING_TYPES[$offer->financing_type] ?? $offer->financing_type) }}
                             </span>
                         @endif
                     </div>

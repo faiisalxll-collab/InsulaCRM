@@ -85,17 +85,30 @@ class Property extends Model
         static::addGlobalScope(new TenantScope);
 
         static::saving(function (Property $property) {
-            if ($property->isDirty('address') && $property->address) {
-                $property->address = AddressNormalizationService::normalize($property->address);
-            }
-            if ($property->isDirty('city') && $property->city) {
-                $property->city = AddressNormalizationService::normalizeCity($property->city);
-            }
-            if ($property->isDirty('state') && $property->state) {
-                $property->state = AddressNormalizationService::normalizeState($property->state);
-            }
-            if ($property->isDirty('zip_code') && $property->zip_code) {
-                $property->zip_code = AddressNormalizationService::normalizeZipCode($property->zip_code);
+            // Use the record's tenant, including jobs/API requests without a logged-in user.
+            if (\App\Services\BusinessModeService::isRealEstate($property->tenant)) {
+                $fields = ['address', 'city', 'district', 'plan_number', 'state', 'zip_code'];
+                $values = AddressNormalizationService::normalizeSaudiAll(
+                    array_intersect_key($property->getAttributes(), array_flip($fields))
+                );
+                foreach ($values as $field => $value) {
+                    if ($property->isDirty($field)) {
+                        $property->setAttribute($field, $value);
+                    }
+                }
+            } else {
+                if ($property->isDirty('address') && $property->address) {
+                    $property->address = AddressNormalizationService::normalize($property->address);
+                }
+                if ($property->isDirty('city') && $property->city) {
+                    $property->city = AddressNormalizationService::normalizeCity($property->city);
+                }
+                if ($property->isDirty('state') && $property->state) {
+                    $property->state = AddressNormalizationService::normalizeState($property->state);
+                }
+                if ($property->isDirty('zip_code') && $property->zip_code) {
+                    $property->zip_code = AddressNormalizationService::normalizeZipCode($property->zip_code);
+                }
             }
 
             if ($property->isDirty(['area_sqm', 'list_price', 'asking_price'])) {
