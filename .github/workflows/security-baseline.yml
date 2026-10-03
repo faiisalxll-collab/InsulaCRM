@@ -49,3 +49,5 @@ jobs:
 # security baseline revision: platform-backup-boundary
 
 # security baseline revision: backups-roles-idor
+
+# security baseline revision: dedupe-backup-test
