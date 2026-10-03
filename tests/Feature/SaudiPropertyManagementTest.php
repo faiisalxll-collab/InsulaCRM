@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Property;
 use App\Models\PropertyRequest as PropertySearchRequest;
+use App\Models\Tenant;
+use App\Policies\PropertyPolicy;
 use Tests\TestCase;
 
 class SaudiPropertyManagementTest extends TestCase
@@ -182,4 +184,40 @@ class SaudiPropertyManagementTest extends TestCase
             'price_per_sqm' => 2000.00,
         ]);
     }
+
+    public function test_admin_policy_cannot_authorize_foreign_tenant_property(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $foreignTenant = Tenant::create([
+            'name' => 'Foreign Property Office',
+            'slug' => 'foreign-office-property-policy',
+            'email' => 'foreign-property-policy@example.test',
+            'status' => 'active',
+            'timezone' => 'Asia/Riyadh',
+            'currency' => 'SAR',
+            'date_format' => 'Y-m-d',
+            'country' => 'SA',
+            'measurement_system' => 'metric',
+            'locale' => 'ar',
+            'distribution_method' => 'round_robin',
+            'business_mode' => 'realestate',
+        ]);
+
+        $foreignProperty = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $foreignTenant->id,
+            'address' => 'عقار مكتب آخر',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $policy = app(PropertyPolicy::class);
+
+        $this->assertFalse($policy->view($this->adminUser, $foreignProperty));
+        $this->assertFalse($policy->update($this->adminUser, $foreignProperty));
+        $this->assertFalse($policy->delete($this->adminUser, $foreignProperty));
+    }
+
 }
