@@ -245,7 +245,17 @@ class DealController extends Controller
     {
         $this->authorize('update', $deal);
 
-        $deal->update($request->validated());
+        $data = $request->validated();
+
+        if (array_key_exists('commission_status', $data)) {
+            if ($data['commission_status'] === 'paid') {
+                $data['commission_paid_at'] = $data['commission_paid_at'] ?? now();
+            } else {
+                $data['commission_paid_at'] = null;
+            }
+        }
+
+        $deal->update($data);
 
         // Recalculate due_diligence_end_date if relevant fields changed
         if ($deal->contract_date && $deal->inspection_period_days > 0 && $deal->stage === 'under_contract') {
