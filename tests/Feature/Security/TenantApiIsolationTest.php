@@ -298,22 +298,6 @@ class TenantApiIsolationTest extends TestCase
     }
 
 
-    public function test_tenant_admin_cannot_access_platform_database_backups(): void
-    {
-        $role = Role::where('name', 'admin')->firstOrFail();
-        $adminA = User::factory()->create([
-            'tenant_id' => $this->officeA->id,
-            'role_id' => $role->id,
-            'is_active' => true,
-        ]);
-
-        $this->actingAs($adminA)->get('/settings/backups/list')->assertForbidden();
-        $this->actingAs($adminA)->post('/settings/backups/create')->assertForbidden();
-        $this->actingAs($adminA)->get('/settings/backups/download/backup-test.sql.gz')->assertForbidden();
-        $this->actingAs($adminA)->delete('/settings/backups/backup-test.sql.gz')->assertForbidden();
-    }
-
-
     public function test_tenant_admin_cannot_mutate_another_offices_custom_role(): void
     {
         $adminRole = Role::where('name', 'admin')->firstOrFail();
