@@ -54,7 +54,7 @@ class PropertyCriteriaRequest extends FormRequest
             'districts' => ['nullable', 'array', 'max:30'],
             'districts.*' => ['string', 'max:120', 'distinct'],
             'min_price' => ['nullable', 'numeric', 'min:0'],
-            'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
+            'max_price' => ['nullable', 'numeric', 'min:0'],
             'min_area_sqm' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'min_bedrooms' => ['nullable', 'integer', 'min:0', 'max:100'],
             'min_street_width_m' => ['nullable', 'numeric', 'min:0', 'max:9999.99'],
@@ -64,6 +64,21 @@ class PropertyCriteriaRequest extends FormRequest
             'finance_required' => ['boolean'],
             'status' => ['required', Rule::in(array_keys(PropertySearchRequest::STATUSES))],
             'notes' => ['nullable', 'string', 'max:5000'],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function ($validator): void {
+                $min = $this->input('min_price');
+                $max = $this->input('max_price');
+
+                if ($min !== null && $min !== '' && $max !== null && $max !== ''
+                    && is_numeric($min) && is_numeric($max) && (float) $max < (float) $min) {
+                    $validator->errors()->add('max_price', 'الميزانية القصوى يجب أن تكون أكبر من أو تساوي الميزانية الدنيا.');
+                }
+            },
         ];
     }
 
