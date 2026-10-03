@@ -86,4 +86,76 @@ class SaudiPropertyMatchingTest extends TestCase
         $this->assertFalse($result['hard_constraints_passed']);
         $this->assertContains('tenant_mismatch', $result['rejection_reasons']);
     }
+
+    public function test_request_creation_persists_only_prefiltered_active_property_matches(): void
+    {
+        $admin = $this->createTenantWithAdmin();
+        $tenant = $this->tenant;
+        $lead = $this->createLead();
+
+        $eligible = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id, 'lead_id' => $lead->id,
+            'address' => 'Eligible', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => null,
+            'property_type' => 'villa', 'transaction_type' => 'sale',
+            'district' => 'Namar', 'area_sqm' => 340, 'list_price' => 1700000,
+            'finance_eligible' => true, 'listing_status' => 'active',
+        ]);
+
+        Property::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id, 'lead_id' => $lead->id,
+            'address' => 'Too expensive', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => null,
+            'property_type' => 'villa', 'transaction_type' => 'sale',
+            'district' => 'Namar', 'area_sqm' => 340, 'list_price' => 2500000,
+            'finance_eligible' => true, 'listing_status' => 'active',
+        ]);
+
+        $request = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id, 'lead_id' => $lead->id, 'agent_id' => $admin->id,
+            'transaction_type' => 'sale', 'property_type' => 'villa',
+            'city' => 'Riyadh', 'districts' => ['Namar'], 'max_price' => 1800000,
+            'min_area_sqm' => 300, 'finance_required' => true, 'status' => 'active',
+        ]);
+
+        $this->assertDatabaseHas('property_matches', [
+            'tenant_id' => $tenant->id,
+            'property_request_id' => $request->id,
+            'property_id' => $eligible->id,
+            'hard_constraints_passed' => true,
+            'status' => 'eligible',
+        ]);
+
+        $this->assertSame(1, \App\Models\PropertyMatch::withoutGlobalScopes()
+            ->where('property_request_id', $request->id)->count());
+    }
+
+    public function test_property_update_reverse_matches_active_requests_without_duplicates(): void
+    {
+        $admin = $this->createTenantWithAdmin();
+        $tenant = $this->tenant;
+        $lead = $this->createLead();
+
+        $request = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id, 'lead_id' => $lead->id, 'agent_id' => $admin->id,
+            'transaction_type' => 'sale', 'property_type' => 'villa',
+            'city' => 'Riyadh', 'districts' => ['Namar'], 'max_price' => 1800000,
+            'status' => 'active',
+        ]);
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $tenant->id, 'lead_id' => $lead->id,
+            'address' => 'Reverse', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => null,
+            'property_type' => 'villa', 'transaction_type' => 'sale',
+            'district' => 'Namar', 'area_sqm' => 320, 'list_price' => 1700000,
+            'listing_status' => 'active',
+        ]);
+
+        $property->update(['street_width_m' => 20]);
+        $property->update(['street_width_m' => 25]);
+
+        $this->assertSame(1, \App\Models\PropertyMatch::withoutGlobalScopes()
+            ->where('property_request_id', $request->id)
+            ->where('property_id', $property->id)
+            ->count());
+    }
+
 }
