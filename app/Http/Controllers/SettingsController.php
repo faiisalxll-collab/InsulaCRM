@@ -1268,6 +1268,10 @@ class SettingsController extends Controller
      */
     public function updateRolePermissions(Request $request, Role $role)
     {
+        if (!$role->is_system && (int) $role->tenant_id !== (int) auth()->user()->tenant_id) {
+            abort(404);
+        }
+
         $request->validate([
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
@@ -1290,6 +1294,10 @@ class SettingsController extends Controller
      */
     public function deleteRole(Role $role)
     {
+        if (!$role->is_system && (int) $role->tenant_id !== (int) auth()->user()->tenant_id) {
+            abort(404);
+        }
+
         if ($role->is_system) {
             return redirect()->route('settings.roles')->with('error', __('Cannot delete system roles.'));
         }
