@@ -86,14 +86,15 @@ class RealEstateModeTest extends TestCase
         $response->assertStatus(404);
     }
 
-    public function test_realestate_property_shows_cma_not_arv(): void
+    public function test_realestate_property_hides_legacy_valuation_worksheets(): void
     {
         $this->actingAsAdmin(['business_mode' => 'realestate']);
         $property = $this->createProperty();
 
         $response = $this->get("/properties/{$property->id}");
         $response->assertStatus(200);
-        $response->assertSee('Comparable Market Analysis');
+        $response->assertDontSee('Comparable Market Analysis');
+        $response->assertDontSee('ARV Worksheet');
     }
 
     public function test_wholesale_property_shows_arv_not_cma(): void
