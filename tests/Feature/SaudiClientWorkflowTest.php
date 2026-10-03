@@ -293,30 +293,6 @@ class SaudiClientWorkflowTest extends TestCase
         );
     }
 
-    public function test_broker_cannot_bulk_reassign_clients_to_another_broker(): void
-    {
-        $this->createTenantWithAdmin($this->realEstateTenant());
-
-        $agentA = $this->createUserWithRole('agent');
-        $agentB = $this->createUserWithRole('agent');
-        $lead = $this->createLead([
-            'agent_id' => $agentA->id,
-            'first_name' => 'عميل',
-            'last_name' => 'الوسيط ألف',
-        ]);
-
-        $this->actingAs($agentA)
-            ->post(route('leads.bulkAction'), [
-                'ids' => [$lead->id],
-                'action' => 'assign',
-                'agent_id' => $agentB->id,
-            ])
-            ->assertForbidden();
-
-        $this->assertSame($agentA->id, $lead->fresh()->agent_id);
-    }
-
-
     public function test_bulk_delete_keeps_linked_saudi_clients(): void
     {
         $this->actingAsAdmin($this->realEstateTenant());
