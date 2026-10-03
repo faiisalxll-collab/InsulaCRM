@@ -41,29 +41,38 @@ class DealController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
+
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhereHas('lead', function ($lq) use ($search) {
-                      $lq->where(function ($inner) use ($search) {
-                          $inner->where('first_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%");
-                      });
-                  })
-                  ->orWhereHas('lead.property', function ($pq) use ($search) {
-                      $pq->where('address', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('property', function ($pq) use ($search) {
-                      $pq->where('address', 'like', "%{$search}%")
-                          ->orWhere('city', 'like', "%{$search}%")
-                          ->orWhere('district', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('propertyRequest.lead', function ($clientQuery) use ($search) {
-                      $clientQuery->where(function ($inner) use ($search) {
-                          $inner->where('first_name', 'like', "%{$search}%")
-                              ->orWhere('last_name', 'like', "%{$search}%")
-                              ->orWhere('phone', 'like', "%{$search}%");
-                      });
-                  });
+                $q->where('title', 'like', "%{$search}%");
+
+                if (\App\Services\BusinessModeService::isRealEstate()) {
+                    // Saudi deals are explicitly linked to one property and one request.
+                    // Do not search lead.property here: an owner may have several properties,
+                    // which would make unrelated deals appear in the same search result.
+                    $q->orWhereHas('property', function ($propertyQuery) use ($search) {
+                        $propertyQuery
+                            ->where('address', 'like', "%{$search}%")
+                            ->orWhere('city', 'like', "%{$search}%")
+                            ->orWhere('district', 'like', "%{$search}%");
+                    })->orWhereHas('propertyRequest.lead', function ($clientQuery) use ($search) {
+                        $clientQuery->where(function ($inner) use ($search) {
+                            $inner->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%");
+                        });
+                    });
+
+                    return;
+                }
+
+                $q->orWhereHas('lead', function ($leadQuery) use ($search) {
+                    $leadQuery->where(function ($inner) use ($search) {
+                        $inner->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+                })->orWhereHas('lead.property', function ($propertyQuery) use ($search) {
+                    $propertyQuery->where('address', 'like', "%{$search}%");
+                });
             });
         }
 
