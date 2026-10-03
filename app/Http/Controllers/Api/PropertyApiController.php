@@ -33,6 +33,18 @@ class PropertyApiController extends Controller
             $query->where('property_type', $request->property_type);
         }
 
+        if ($request->filled('transaction_type')) {
+            $query->where('transaction_type', $request->transaction_type);
+        }
+
+        if ($request->filled('district')) {
+            $query->where('district', $request->district);
+        }
+
+        if ($request->filled('listing_status')) {
+            $query->where('listing_status', $request->listing_status);
+        }
+
         if ($request->filled('state')) {
             $query->where('state', strtoupper($request->state));
         }
@@ -66,13 +78,30 @@ class PropertyApiController extends Controller
     {
         $tenant = $request->attributes->get('tenant');
 
+        $isRealEstate = \App\Services\BusinessModeService::isRealEstate($tenant);
+
         $validator = Validator::make($request->all(), [
             'lead_id'            => 'nullable|integer',
             'address'            => 'required|string|max:255',
-            'city'               => 'nullable|string|max:100',
-            'state'              => 'nullable|string|max:2',
+            'city'               => $isRealEstate ? 'required|string|max:100' : 'nullable|string|max:100',
+            'state'              => $isRealEstate ? 'nullable|string|max:100' : 'nullable|string|max:2',
             'zip_code'           => 'nullable|string|max:10',
-            'property_type'      => 'nullable|string|max:100',
+            'property_type'      => $isRealEstate
+                ? 'required|in:' . implode(',', CustomFieldService::getValidSlugs('property_type', $tenant))
+                : 'nullable|string|max:100',
+            'transaction_type'   => $isRealEstate ? 'required|in:sale,rent' : 'nullable|in:sale,rent',
+            'district'           => 'nullable|string|max:120',
+            'plan_number'        => 'nullable|string|max:100',
+            'area_sqm'           => 'nullable|numeric|min:0|max:99999999.99',
+            'facing'             => 'nullable|string|max:30',
+            'street_width_m'     => 'nullable|numeric|min:0|max:9999.99',
+            'property_age_years' => 'nullable|integer|min:0|max:1000',
+            'floors'             => 'nullable|integer|min:0|max:500',
+            'units'              => 'nullable|integer|min:0|max:10000',
+            'furnished'          => 'nullable|boolean',
+            'finance_eligible'   => 'nullable|boolean',
+            'latitude'           => 'nullable|numeric|between:-90,90',
+            'longitude'          => 'nullable|numeric|between:-180,180',
             'bedrooms'           => 'nullable|integer|min:0',
             'bathrooms'          => 'nullable|numeric|min:0',
             'square_footage'     => 'nullable|integer|min:0',
@@ -86,7 +115,7 @@ class PropertyApiController extends Controller
             'condition'          => 'nullable|string|max:100',
             'distress_markers'   => 'nullable|array',
             'notes'              => 'nullable|string',
-            'listing_status'     => 'nullable|string|max:50',
+            'listing_status'     => $isRealEstate ? 'nullable|in:active,pending,sold,withdrawn,expired' : 'nullable|string|max:50',
             'listed_at'          => 'nullable|date',
             'sold_at'            => 'nullable|date',
             'sold_price'         => 'nullable|numeric|min:0',
@@ -128,12 +157,29 @@ class PropertyApiController extends Controller
             ->where('tenant_id', $tenant->id)
             ->findOrFail($id);
 
+        $isRealEstate = \App\Services\BusinessModeService::isRealEstate($tenant);
+
         $validator = Validator::make($request->all(), [
             'address'            => 'nullable|string|max:255',
             'city'               => 'nullable|string|max:100',
-            'state'              => 'nullable|string|max:2',
+            'state'              => $isRealEstate ? 'nullable|string|max:100' : 'nullable|string|max:2',
             'zip_code'           => 'nullable|string|max:10',
-            'property_type'      => 'nullable|string|max:100',
+            'property_type'      => $isRealEstate
+                ? 'nullable|in:' . implode(',', CustomFieldService::getValidSlugs('property_type', $tenant))
+                : 'nullable|string|max:100',
+            'transaction_type'   => 'nullable|in:sale,rent',
+            'district'           => 'nullable|string|max:120',
+            'plan_number'        => 'nullable|string|max:100',
+            'area_sqm'           => 'nullable|numeric|min:0|max:99999999.99',
+            'facing'             => 'nullable|string|max:30',
+            'street_width_m'     => 'nullable|numeric|min:0|max:9999.99',
+            'property_age_years' => 'nullable|integer|min:0|max:1000',
+            'floors'             => 'nullable|integer|min:0|max:500',
+            'units'              => 'nullable|integer|min:0|max:10000',
+            'furnished'          => 'nullable|boolean',
+            'finance_eligible'   => 'nullable|boolean',
+            'latitude'           => 'nullable|numeric|between:-90,90',
+            'longitude'          => 'nullable|numeric|between:-180,180',
             'bedrooms'           => 'nullable|integer|min:0',
             'bathrooms'          => 'nullable|numeric|min:0',
             'square_footage'     => 'nullable|integer|min:0',
@@ -147,7 +193,7 @@ class PropertyApiController extends Controller
             'condition'          => 'nullable|string|max:100',
             'distress_markers'   => 'nullable|array',
             'notes'              => 'nullable|string',
-            'listing_status'     => 'nullable|string|max:50',
+            'listing_status'     => $isRealEstate ? 'nullable|in:active,pending,sold,withdrawn,expired' : 'nullable|string|max:50',
             'listed_at'          => 'nullable|date',
             'sold_at'            => 'nullable|date',
             'sold_price'         => 'nullable|numeric|min:0',
