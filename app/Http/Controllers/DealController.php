@@ -90,6 +90,10 @@ class DealController extends Controller
 
         $deal->update($updateData);
 
+        if (\App\Services\BusinessModeService::isRealEstate() && $deal->property_id && $deal->property_request_id) {
+            $this->syncSaudiTransactionState($deal, $request->stage);
+        }
+
         Activity::create([
             'tenant_id' => auth()->user()->tenant_id,
             'lead_id' => $deal->lead_id,
@@ -435,6 +439,13 @@ class DealController extends Controller
     {
         $this->authorize('update', $deal);
 
+        if (\App\Services\BusinessModeService::isRealEstate() && $deal->property_request_id && ! $request->filled('buyer_name')) {
+            $deal->loadMissing('propertyRequest.lead');
+            $request->merge([
+                'buyer_name' => trim((string) ($deal->propertyRequest?->lead?->full_name ?? 'عميل')),
+            ]);
+        }
+
         $request->validate([
             'buyer_name' => 'required|string|max:255',
             'buyer_agent_name' => 'nullable|string|max:255',
@@ -490,6 +501,33 @@ class DealController extends Controller
         $oldStatus = $offer->status;
         $offer->update($request->only(['status', 'counter_price', 'notes']));
 
+        if (\App\Services\BusinessModeService::isRealEstate() && $deal->property_id && $deal->property_request_id) {
+            if ($offer->status === 'countered') {
+                $deal->update([
+                    'stage' => 'negotiating',
+                    'stage_changed_at' => now(),
+                ]);
+            }
+
+            if ($offer->status === 'accepted') {
+                $acceptedPrice = $offer->counter_price ?? $offer->offer_price;
+
+                $deal->update([
+                    'contract_price' => $acceptedPrice,
+                    'contract_date' => $deal->contract_date ?? now()->toDateString(),
+                    'stage' => 'under_contract',
+                    'stage_changed_at' => now(),
+                ]);
+
+                $deal->offers()
+                    ->whereKeyNot($offer->id)
+                    ->whereIn('status', ['pending', 'countered'])
+                    ->update(['status' => 'rejected']);
+
+                $this->syncSaudiTransactionState($deal, 'under_contract');
+            }
+        }
+
         if ($oldStatus !== $offer->status) {
             Activity::create([
                 'tenant_id' => auth()->user()->tenant_id,
@@ -516,7 +554,63 @@ class DealController extends Controller
         $this->authorize('update', $deal);
 
         $offer->delete();
+
         return response()->json(['success' => true]);
+    }
+
+    private function syncSaudiTransactionState(Deal $deal, string $stage): void
+    {
+        $deal->loadMissing(['property', 'propertyRequest']);
+        $property = $deal->property;
+        $propertyRequest = $deal->propertyRequest;
+
+        if (! $property || ! $propertyRequest) {
+            return;
+        }
+
+        if ($stage === 'under_contract') {
+            if ($property->listing_status === 'active') {
+                $property->update(['listing_status' => 'pending']);
+            }
+
+            if ($propertyRequest->status === 'active') {
+                $propertyRequest->update(['status' => 'paused']);
+            }
+
+            return;
+        }
+
+        if ($stage === 'closed_won') {
+            if ($property->transaction_type === 'rent') {
+                $property->update(['listing_status' => 'leased']);
+            } else {
+                $property->update([
+                    'listing_status' => 'sold',
+                    'sold_at' => now()->toDateString(),
+                    'sold_price' => $deal->contract_price,
+                ]);
+            }
+
+            if ($propertyRequest->status !== 'fulfilled') {
+                $propertyRequest->update(['status' => 'fulfilled']);
+            }
+
+            if ($deal->total_commission !== null && $deal->commission_status !== 'paid') {
+                $deal->update(['commission_status' => 'due']);
+            }
+
+            return;
+        }
+
+        if ($stage === 'closed_lost') {
+            if ($property->listing_status === 'pending') {
+                $property->update(['listing_status' => 'active']);
+            }
+
+            if ($propertyRequest->status === 'paused') {
+                $propertyRequest->update(['status' => 'active']);
+            }
+        }
     }
 
 }
