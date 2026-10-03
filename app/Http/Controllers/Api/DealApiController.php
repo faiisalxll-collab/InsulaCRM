@@ -98,10 +98,19 @@ class DealApiController extends Controller
         $data['stage'] = $data['stage'] ?? \App\Services\BusinessModeService::getDefaultStage();
         $data['stage_changed_at'] = now();
 
-        // Verify lead belongs to tenant
+        // Verify related records belong to the authenticated tenant.
+        // Never trust a foreign key supplied by an API client: an otherwise
+        // valid ID from another office must not be attachable to this deal.
         $lead = \App\Models\Lead::withoutGlobalScopes()
             ->where('tenant_id', $tenant->id)
             ->findOrFail($data['lead_id']);
+
+        if (!empty($data['agent_id'])) {
+            \App\Models\User::withoutGlobalScopes()
+                ->where('tenant_id', $tenant->id)
+                ->where('is_active', true)
+                ->findOrFail($data['agent_id']);
+        }
 
         if (empty($data['title'])) {
             $data['title'] = $lead->full_name . ' Deal';
