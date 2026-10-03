@@ -12,6 +12,18 @@ class PropertyRequest extends Model
 {
     use HasFactory;
 
+    public const TRANSACTION_TYPES = [
+        'sale' => 'شراء',
+        'rent' => 'إيجار',
+    ];
+
+    public const STATUSES = [
+        'active' => 'نشط',
+        'paused' => 'موقوف',
+        'fulfilled' => 'مكتمل',
+        'closed' => 'مغلق',
+    ];
+
     protected $fillable = [
         'tenant_id','lead_id','agent_id','transaction_type','property_type','city',
         'districts','min_price','max_price','min_area_sqm','min_bedrooms',
