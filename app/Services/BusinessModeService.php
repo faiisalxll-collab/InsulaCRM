@@ -133,6 +133,19 @@ class BusinessModeService
         'sign_call', 'ppc', 'seo', 'zillow', 'realtor_com', 'mls', 'sphere',
     ];
 
+    public const REALESTATE_CONTACT_TYPES = [
+        'seller_lead'   => 'مالك / عارض عقار',
+        'buyer_lead'    => 'باحث عن عقار',
+        'active_client' => 'عميل نشط',
+        'past_client'   => 'عميل سابق',
+    ];
+
+    public const REALESTATE_TEMPERATURES = [
+        'hot'  => 'عاجل',
+        'warm' => 'متوسط',
+        'cold' => 'غير مستعجل',
+    ];
+
     // ── Wholesale roles ──
 
     public const WHOLESALE_ROLES = [
@@ -535,6 +548,31 @@ class BusinessModeService
             'bank_finance' => 'تمويل بنكي',
             'other' => 'أخرى',
         ];
+    }
+
+    public static function getRealEstateContactTypes(): array
+    {
+        return self::REALESTATE_CONTACT_TYPES;
+    }
+
+    public static function getRealEstateTemperatures(): array
+    {
+        return self::REALESTATE_TEMPERATURES;
+    }
+
+    public static function getLeadSourceLabel(string $source, ?Tenant $tenant = null): string
+    {
+        $sources = self::getCustomFieldDefaults('lead_source', $tenant);
+
+        if (isset($sources[$source])) {
+            return (string) $sources[$source];
+        }
+
+        if (self::isRealEstate($tenant) && in_array($source, self::REALESTATE_LEGACY_LEAD_SOURCES, true)) {
+            return 'مصدر قديم: '.ucwords(str_replace('_', ' ', $source));
+        }
+
+        return ucwords(str_replace('_', ' ', $source));
     }
 
     // ─── Transaction Checklist Defaults ─────────────────────
