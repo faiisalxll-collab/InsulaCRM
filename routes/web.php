@@ -32,6 +32,7 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UpdateController;
 use App\Http\Controllers\IntegrationController;
+use App\Http\Controllers\WhatsAppSettingsController;
 use App\Http\Controllers\SsoController;
 use App\Http\Controllers\EmailTemplateController;
 use App\Http\Controllers\OnboardingController;
@@ -475,6 +476,7 @@ Route::middleware(['auth', 'tenant', 'require2fa'])->group(function () {
         Route::get('/ai-history/{aiLog}', [AiLogController::class, 'show'])->name('ai-log.show');
 
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::get('/settings/whatsapp', [WhatsAppSettingsController::class, 'index'])->name('settings.whatsapp');
         Route::put('/settings/general', [SettingsController::class, 'updateGeneral'])->name('settings.updateGeneral');
         Route::post('/settings/invite-agent', [SettingsController::class, 'inviteAgent'])->name('settings.inviteAgent');
         Route::patch('/settings/agents/{user}/toggle', [SettingsController::class, 'toggleAgent'])->name('settings.toggleAgent');

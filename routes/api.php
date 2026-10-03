@@ -6,7 +6,12 @@ use App\Http\Controllers\Api\DealApiController;
 use App\Http\Controllers\Api\LeadIngestController;
 use App\Http\Controllers\Api\PropertyApiController;
 use App\Http\Controllers\Api\StatsApiController;
+use App\Http\Controllers\Api\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
+
+// Meta WhatsApp webhook: public by design; authenticity is verified with Meta tokens/signatures.
+Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify'])->middleware('throttle:60,1');
+Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'receive'])->middleware('throttle:120,1');
 
 /*
 |--------------------------------------------------------------------------
