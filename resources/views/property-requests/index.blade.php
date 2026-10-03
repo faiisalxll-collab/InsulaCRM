@@ -22,7 +22,7 @@
                     <label class="form-label">الحالة</label>
                     <select name="status" class="form-select form-select-sm">
                         <option value="">الكل</option>
-                        @foreach(AppModelsPropertyRequest::STATUSES as $value => $label)
+                        @foreach($statuses as $value => $label)
                             <option value="{{ $value }}" @selected(request('status') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -31,7 +31,7 @@
                     <label class="form-label">العملية</label>
                     <select name="transaction_type" class="form-select form-select-sm">
                         <option value="">بيع وإيجار</option>
-                        @foreach(AppModelsPropertyRequest::TRANSACTION_TYPES as $value => $label)
+                        @foreach($transactionTypes as $value => $label)
                             <option value="{{ $value }}" @selected(request('transaction_type') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -85,7 +85,7 @@
                             @endif
                         </td>
                         <td>
-                            <strong>{{ AppModelsPropertyRequest::TRANSACTION_TYPES[$propertyRequest->transaction_type] ?? $propertyRequest->transaction_type }}</strong>
+                            <strong>{{ $transactionTypes[$propertyRequest->transaction_type] ?? $propertyRequest->transaction_type }}</strong>
                             <div class="text-muted small">{{ $propertyTypes[$propertyRequest->property_type] ?? $propertyRequest->property_type }}</div>
                         </td>
                         <td>
@@ -107,7 +107,7 @@
                         <td>{{ $propertyRequest->agent?->name ?? '—' }}</td>
                         <td>
                             <span class="badge bg-{{ $propertyRequest->status === 'active' ? 'green' : ($propertyRequest->status === 'paused' ? 'yellow' : 'secondary') }}">
-                                {{ AppModelsPropertyRequest::STATUSES[$propertyRequest->status] ?? $propertyRequest->status }}
+                                {{ $statuses[$propertyRequest->status] ?? $propertyRequest->status }}
                             </span>
                         </td>
                         <td><a class="btn btn-sm btn-outline-primary" href="{{ route('property-requests.show', $propertyRequest) }}">فتح</a></td>
