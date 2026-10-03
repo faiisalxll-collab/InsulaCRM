@@ -163,6 +163,11 @@ class Property extends Model
         return $this->hasMany(Showing::class);
     }
 
+    public function deals()
+    {
+        return $this->hasMany(Deal::class);
+    }
+
     public function openHouses()
     {
         return $this->hasMany(OpenHouse::class);
