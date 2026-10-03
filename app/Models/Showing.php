@@ -24,6 +24,7 @@ class Showing extends Model
     protected $fillable = [
         'tenant_id',
         'deal_id',
+        'property_request_id',
         'property_id',
         'lead_id',
         'agent_id',
@@ -55,6 +56,11 @@ class Showing extends Model
     public function property()
     {
         return $this->belongsTo(Property::class);
+    }
+
+    public function propertyRequest()
+    {
+        return $this->belongsTo(PropertyRequest::class);
     }
 
     public function lead()
