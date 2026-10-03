@@ -129,7 +129,15 @@
                                         <span class="text-muted">لا توجد</span>
                                     @endforelse
                                 </td>
-                                <td><a class="btn btn-sm btn-outline-primary" href="{{ route('properties.show', $property) }}">العقار</a></td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <a class="btn btn-sm btn-primary"
+                                           href="{{ route('showings.create', ['property_request_id' => $propertyRequest->id, 'property_id' => $property->id]) }}">
+                                            جدولة معاينة
+                                        </a>
+                                        <a class="btn btn-sm btn-outline-primary" href="{{ route('properties.show', $property) }}">العقار</a>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="6" class="text-center text-muted py-5">لا توجد مطابقة نشطة حاليًا.</td></tr>
