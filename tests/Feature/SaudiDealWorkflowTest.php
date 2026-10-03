@@ -563,8 +563,8 @@ class SaudiDealWorkflowTest extends TestCase
 
         $this->get(route('pipeline', ['search' => 'شارع الصحراء']))
             ->assertOk()
-            ->assertSee('TARGET-DEAL-MARKER')
-            ->assertDontSee('OTHER-DEAL-MARKER');
+            ->assertSee('عقار شارع الصحراء المميز')
+            ->assertDontSee('عقار مختلف تمامًا');
     }
 
     public function test_saudi_deal_page_title_uses_request_client(): void
