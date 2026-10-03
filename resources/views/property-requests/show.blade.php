@@ -14,14 +14,14 @@
         'area' => 'المساحة',
         'bedrooms' => 'الغرف',
         'street_width' => 'عرض الشارع',
-        'frontage' => 'الواجهة',
+        'facing' => 'اتجاه الواجهة',
         'age' => 'عمر العقار',
         'finance' => 'التمويل',
     ];
     $warningLabels = [
         'bedrooms_preference_not_met' => 'عدد الغرف أقل من المفضل',
         'street_width_preference_not_met' => 'عرض الشارع أقل من المفضل',
-        'frontage_preference_not_met' => 'الواجهة المفضلة غير متحققة',
+        'facing_preference_not_met' => 'اتجاه الواجهة المفضل غير متحقق',
         'age_preference_not_met' => 'عمر العقار أكبر من المفضل',
     ];
 @endphp
