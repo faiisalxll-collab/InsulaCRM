@@ -46,7 +46,6 @@ class PropertyRequest extends FormRequest
 
             $rules += [
                 'lead_id' => [
-                    'sometimes',
                     'required',
                     Rule::exists('leads', 'id')->where(function ($query) use ($user) {
                         $query->where('tenant_id', $user->tenant_id);
