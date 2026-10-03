@@ -68,16 +68,16 @@
     </div>
 
     <div class="col-md-2">
-        <label class="form-label required">المنطقة</label>
+        <label class="form-label">المنطقة</label>
         <input type="text" name="state" class="form-control @error('state') is-invalid @enderror"
-               value="{{ old('state', $property->state ?? 'الرياض') }}" required>
+               value="{{ old('state', $property->state ?? '') }}">
         @error('state') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
     <div class="col-md-2">
-        <label class="form-label required">الرمز البريدي</label>
+        <label class="form-label">الرمز البريدي</label>
         <input type="text" name="zip_code" class="form-control @error('zip_code') is-invalid @enderror"
-               value="{{ old('zip_code', $property->zip_code ?? '') }}" maxlength="10" required>
+               value="{{ old('zip_code', $property->zip_code ?? '') }}" maxlength="10">
         @error('zip_code') <div class="invalid-feedback">{{ $message }}</div> @enderror
     </div>
 
