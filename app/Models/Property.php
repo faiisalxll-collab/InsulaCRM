@@ -96,6 +96,15 @@ class Property extends Model
             if ($property->isDirty('zip_code') && $property->zip_code) {
                 $property->zip_code = AddressNormalizationService::normalizeZipCode($property->zip_code);
             }
+
+            if ($property->isDirty(['area_sqm', 'list_price', 'asking_price'])) {
+                $price = $property->list_price ?? $property->asking_price;
+                $area = (float) ($property->area_sqm ?? 0);
+
+                $property->price_per_sqm = $price !== null && $area > 0
+                    ? round((float) $price / $area, 2)
+                    : null;
+            }
         });
 
         static::saved(function (Property $property) {
@@ -143,7 +152,13 @@ class Property extends Model
 
     public function getFullAddressAttribute(): string
     {
-        return "{$this->address}, {$this->city}, {$this->state} {$this->zip_code}";
+        return implode('، ', array_values(array_filter([
+            $this->address,
+            $this->district,
+            $this->city,
+            $this->state,
+            $this->zip_code,
+        ], fn ($part) => $part !== null && trim((string) $part) !== '')));
     }
 
     public function getAssignmentFeeAttribute(): ?float
