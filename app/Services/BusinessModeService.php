@@ -272,16 +272,27 @@ class BusinessModeService
                 ? self::REALESTATE_LEAD_SOURCES
                 : self::WHOLESALE_LEAD_SOURCES,
 
-            // These are shared between modes
-            'property_type' => [
-                'single_family' => 'Single Family',
-                'multi_family'  => 'Multi Family',
-                'condo'         => 'Condo',
-                'townhouse'     => 'Townhouse',
-                'commercial'    => 'Commercial',
-                'land'          => 'Land',
-                'other'         => 'Other',
-            ],
+            'property_type' => $isRealEstate
+                ? [
+                    'villa'       => 'فيلا',
+                    'apartment'   => 'شقة',
+                    'floor'       => 'دور',
+                    'land'        => 'أرض',
+                    'building'    => 'عمارة',
+                    'rest_house'  => 'استراحة',
+                    'farm'        => 'مزرعة',
+                    'commercial'  => 'تجاري',
+                    'other'       => 'أخرى',
+                ]
+                : [
+                    'single_family' => 'Single Family',
+                    'multi_family'  => 'Multi Family',
+                    'condo'         => 'Condo',
+                    'townhouse'     => 'Townhouse',
+                    'commercial'    => 'Commercial',
+                    'land'          => 'Land',
+                    'other'         => 'Other',
+                ],
 
             'property_condition' => [
                 'excellent'  => 'Excellent',
@@ -339,7 +350,9 @@ class BusinessModeService
             return [
                 'list_price', 'listing_status', 'listed_at', 'sold_at', 'sold_price',
                 'asking_price', 'bedrooms', 'bathrooms', 'square_footage', 'lot_size',
-                'year_built', 'property_type',
+                'year_built', 'property_type', 'transaction_type', 'district', 'plan_number',
+                'area_sqm', 'facing', 'street_width_m', 'property_age_years',
+                'finance_eligible', 'price_per_sqm', 'latitude', 'longitude',
             ];
         }
 
