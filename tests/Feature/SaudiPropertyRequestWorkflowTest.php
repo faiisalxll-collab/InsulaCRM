@@ -163,4 +163,99 @@ class SaudiPropertyRequestWorkflowTest extends TestCase
             ->assertSee('OWN-CITY-MARKER', false)
             ->assertDontSee('OTHER-CITY-MARKER', false);
     }
+
+    public function test_match_page_links_directly_to_prefilled_showing(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = \App\Models\Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'فيلا رابط المعاينة',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'district' => 'نمار',
+            'list_price' => 1500000,
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = \App\Models\PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'districts' => ['نمار'],
+            'max_price' => 1600000,
+            'status' => 'active',
+        ]);
+
+        $showUrl = route('property-requests.show', $propertyRequest);
+        $scheduleUrl = route('showings.create', [
+            'property_request_id' => $propertyRequest->id,
+            'property_id' => $property->id,
+        ]);
+
+        $this->get($showUrl)
+            ->assertOk()
+            ->assertSee('جدولة معاينة')
+            ->assertSee($scheduleUrl, false);
+
+        $this->get($scheduleUrl)
+            ->assertOk()
+            ->assertSee('تم فتح المعاينة من مطابقة معتمدة')
+            ->assertSee('فيلا رابط المعاينة');
+    }
+
+    public function test_prefilled_showing_uses_request_client_and_agent(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = \App\Models\Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'فيلا معاينة محفوظة',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'district' => 'نمار',
+            'list_price' => 1500000,
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = \App\Models\PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'districts' => ['نمار'],
+            'max_price' => 1600000,
+            'status' => 'active',
+        ]);
+
+        $response = $this->post(route('showings.store'), [
+            'property_request_id' => $propertyRequest->id,
+            'property_id' => $property->id,
+            'showing_date' => '2026-10-06',
+            'showing_time' => '17:30',
+            'duration_minutes' => 30,
+        ]);
+
+        $showing = \App\Models\Showing::withoutGlobalScopes()->latest('id')->firstOrFail();
+
+        $response->assertRedirect(route('showings.show', $showing));
+        $this->assertSame($client->id, $showing->lead_id);
+        $this->assertSame($this->adminUser->id, $showing->agent_id);
+        $this->assertSame($propertyRequest->id, $showing->property_request_id);
+        $this->assertSame($property->id, $showing->property_id);
+    }
+
 }
