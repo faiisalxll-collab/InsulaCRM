@@ -86,4 +86,5 @@ class PropertyRequest extends Model
     public function agent() { return $this->belongsTo(User::class, 'agent_id'); }
     public function matches() { return $this->hasMany(PropertyMatch::class); }
     public function deals() { return $this->hasMany(Deal::class); }
+    public function showings() { return $this->hasMany(Showing::class); }
 }
