@@ -313,6 +313,36 @@ class TenantApiIsolationTest extends TestCase
         $this->actingAs($adminA)->delete('/settings/backups/backup-test.sql.gz')->assertForbidden();
     }
 
+
+    public function test_tenant_admin_cannot_mutate_another_offices_custom_role(): void
+    {
+        $adminRole = Role::where('name', 'admin')->firstOrFail();
+        $adminA = User::factory()->create([
+            'tenant_id' => $this->officeA->id,
+            'role_id' => $adminRole->id,
+            'is_active' => true,
+        ]);
+        $foreignRole = Role::create([
+            'tenant_id' => $this->officeB->id,
+            'name' => 'office_b_private_role',
+            'display_name' => 'Office B Private Role',
+            'is_system' => false,
+        ]);
+
+        $this->actingAs($adminA)
+            ->put("/settings/roles/{$foreignRole->id}/permissions", ['permissions' => []])
+            ->assertNotFound();
+
+        $this->actingAs($adminA)
+            ->delete("/settings/roles/{$foreignRole->id}")
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('roles', [
+            'id' => $foreignRole->id,
+            'tenant_id' => $this->officeB->id,
+        ]);
+    }
+
     private function makeLead(Tenant $tenant, string $firstName, string $lastName): Lead
     {
         return Lead::withoutGlobalScopes()->create([
