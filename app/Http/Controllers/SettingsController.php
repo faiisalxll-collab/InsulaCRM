@@ -276,21 +276,21 @@ class SettingsController extends Controller
 
     public function backupList()
     {
-        return response()->json(['backups' => $this->backupService->list()]);
+        // Database backups contain records for every tenant. They are an
+        // infrastructure/operator concern and must never be exposed through a
+        // tenant-scoped SaaS account.
+        abort(403, 'Database backups are restricted to platform operators.');
     }
 
     public function backupCreate()
     {
-        if ($this->backupService->create()) {
-            AuditLog::log('backup.created', auth()->user()->tenant);
-            return response()->json(['success' => true, 'message' => __('Backup created successfully.'), 'backups' => $this->backupService->list()]);
-        }
-
-        return response()->json(['success' => false, 'message' => __('Backup failed. Check server logs for details.')], 500);
+        abort(403, 'Database backups are restricted to platform operators.');
     }
 
     public function backupDownload(string $filename)
     {
+        abort(403, 'Database backups are restricted to platform operators.');
+
         $filepath = $this->backupService->path($filename);
         if (! $filepath) {
             abort(404);
@@ -301,6 +301,8 @@ class SettingsController extends Controller
 
     public function backupDelete(string $filename)
     {
+        abort(403, 'Database backups are restricted to platform operators.');
+
         if (! $this->backupService->delete($filename)) {
             return response()->json(['success' => false, 'message' => __('File not found.')], 404);
         }
