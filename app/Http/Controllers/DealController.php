@@ -263,7 +263,12 @@ class DealController extends Controller
         $deal->update($data);
 
         // Recalculate due_diligence_end_date if relevant fields changed
-        if ($deal->contract_date && $deal->inspection_period_days > 0 && $deal->stage === 'under_contract') {
+        if (
+            \App\Services\BusinessModeService::isWholesale()
+            && $deal->contract_date
+            && $deal->inspection_period_days > 0
+            && $deal->stage === 'under_contract'
+        ) {
             $deal->update([
                 'due_diligence_end_date' => $deal->contract_date->copy()->addDays($deal->inspection_period_days),
             ]);
