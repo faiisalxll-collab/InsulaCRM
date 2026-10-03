@@ -70,7 +70,7 @@ class PropertyMatchingService
         if ($preferredFacings === []) {
             $scores['features_score'] += (int) ($weights['facing'] ?? $weights['frontage'] ?? 5);
         } elseif ($property->facing !== null && in_array($this->normalize($property->facing), $preferredFacings, true)) {
-            $scores['features_score'] += (int) $weights['frontage'];
+            $scores['features_score'] += (int) ($weights['facing'] ?? $weights['frontage'] ?? 5);
             $reasons[] = 'facing';
         } else {
             $warnings[] = 'facing_preference_not_met';
