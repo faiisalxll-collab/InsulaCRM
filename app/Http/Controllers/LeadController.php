@@ -85,6 +85,10 @@ class LeadController extends Controller
 
         $agents = !auth()->user()->isAgent() ? $this->getAgents() : collect();
 
+        if (\App\Services\BusinessModeService::isRealEstate()) {
+            return view('leads.saudi-index', compact('leads', 'agents'));
+        }
+
         return view('leads.index', compact('leads', 'agents'));
     }
 
@@ -155,6 +159,11 @@ class LeadController extends Controller
         $this->authorize('create', Lead::class);
 
         $agents = $this->getAgents();
+
+        if (\App\Services\BusinessModeService::isRealEstate()) {
+            return view('leads.saudi-create', compact('agents'));
+        }
+
         return view('leads.create', compact('agents'));
     }
 
@@ -209,9 +218,23 @@ class LeadController extends Controller
     public function show(Lead $lead)
     {
         $this->authorize('view', $lead);
+        if (\App\Services\BusinessModeService::isRealEstate()) {
+            $lead->load([
+                'agent',
+                'properties',
+                'propertyRequests.matches',
+                'propertyRequests.deals.property',
+                'activities.agent',
+                'tasks',
+            ]);
+
+            return view('leads.saudi-show', compact('lead'));
+        }
+
         $lead->load(['agent', 'property', 'activities', 'tasks', 'deals', 'lists', 'photos.uploader', 'sequenceEnrollments.sequence.steps']);
         $sequences = \App\Models\Sequence::where('is_active', true)->get();
         $assignmentHistory = app(AssignmentHistoryService::class)->getHistory($lead);
+
         return view('leads.show', compact('lead', 'sequences', 'assignmentHistory'));
     }
 
@@ -219,6 +242,11 @@ class LeadController extends Controller
     {
         $this->authorize('update', $lead);
         $agents = $this->getAgents($lead);
+
+        if (\App\Services\BusinessModeService::isRealEstate()) {
+            return view('leads.saudi-edit', compact('lead', 'agents'));
+        }
+
         return view('leads.edit', compact('lead', 'agents'));
     }
 
