@@ -71,11 +71,13 @@
                         @csrf
                         <button class="btn btn-outline-primary">إعادة المطابقة</button>
                     </form>
+                    @if(($propertyRequest->showings_count ?? 0) === 0 && ($propertyRequest->deals_count ?? 0) === 0)
                     <form method="POST" action="{{ route('property-requests.destroy', $propertyRequest) }}" onsubmit="return confirm('حذف الطلب نهائيًا؟')">
                         @csrf
                         @method('DELETE')
                         <button class="btn btn-outline-danger">حذف</button>
                     </form>
+                    @endif
                 </div>
             </div>
         </div>
