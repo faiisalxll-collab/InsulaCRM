@@ -34,8 +34,23 @@ class ProcessCsvImport implements ShouldQueue
 
     public function handle(): void
     {
-        $importLog = ImportLog::withoutGlobalScopes()->find($this->importLogId);
-        if (!$importLog) {
+        // Queue payloads are untrusted boundaries too. Bind every referenced
+        // resource to the tenant carried by the job before touching data.
+        $importLog = ImportLog::withoutGlobalScopes()
+            ->where('tenant_id', $this->tenantId)
+            ->where('list_id', $this->listId)
+            ->find($this->importLogId);
+
+        $list = LeadList::withoutGlobalScopes()
+            ->where('tenant_id', $this->tenantId)
+            ->find($this->listId);
+
+        if (!$importLog || !$list) {
+            Log::warning('CSV import rejected due to tenant/resource mismatch', [
+                'import_log_id' => $this->importLogId,
+                'list_id' => $this->listId,
+                'tenant_id' => $this->tenantId,
+            ]);
             return;
         }
 
@@ -145,7 +160,9 @@ class ProcessCsvImport implements ShouldQueue
             fclose($handle);
 
             // Update list record count
-            LeadList::withoutGlobalScopes()->where('id', $this->listId)
+            LeadList::withoutGlobalScopes()
+                ->where('tenant_id', $this->tenantId)
+                ->where('id', $this->listId)
                 ->update(['record_count' => $imported + $duplicates]);
 
             // Final update
@@ -160,7 +177,10 @@ class ProcessCsvImport implements ShouldQueue
 
             // Recalculate motivation scores
             $motivationService = new MotivationScoreService();
-            $affectedLeads = Lead::withoutGlobalScopes()->whereIn('id', array_unique($affectedLeadIds))->get();
+            $affectedLeads = Lead::withoutGlobalScopes()
+                ->where('tenant_id', $this->tenantId)
+                ->whereIn('id', array_unique($affectedLeadIds))
+                ->get();
             foreach ($affectedLeads as $lead) {
                 $motivationService->recalculate($lead);
             }
@@ -169,7 +189,10 @@ class ProcessCsvImport implements ShouldQueue
             try {
                 $tenant = Tenant::find($this->tenantId);
                 if ($tenant && $tenant->ai_enabled) {
-                    $listType = LeadList::withoutGlobalScopes()->where('id', $this->listId)->value('type');
+                    $listType = LeadList::withoutGlobalScopes()
+                        ->where('tenant_id', $this->tenantId)
+                        ->where('id', $this->listId)
+                        ->value('type');
                     $aiService = new AiService($tenant);
                     $newLeads = $affectedLeads->where('status', 'new')->take(50);
                     foreach ($newLeads as $lead) {
