@@ -33,17 +33,18 @@ class BusinessModeService
     // ── Real estate agent pipeline stages ──
 
     public const REALESTATE_STAGES = [
-        'lead'              => 'Lead',
-        'listing_agreement' => 'Listing Agreement',
-        'active_listing'    => 'Active Listing',
-        'showing'           => 'Showing',
-        'offer_received'    => 'Offer Received',
-        'under_contract'    => 'Under Contract',
-        'inspection'        => 'Inspection',
-        'appraisal'         => 'Appraisal',
-        'closing'           => 'Closing',
-        'closed_won'        => 'Closed Won',
-        'closed_lost'       => 'Closed Lost',
+        'lead'              => 'عميل',
+        'listing_agreement' => 'اتفاقية تسويق',
+        'active_listing'    => 'عقار نشط',
+        'showing'           => 'معاينة',
+        'offer_received'    => 'عرض',
+        'negotiating'       => 'تفاوض',
+        'under_contract'    => 'اتفاق',
+        'inspection'        => 'مراجعة',
+        'appraisal'         => 'تقييم',
+        'closing'           => 'إغلاق',
+        'closed_won'        => 'مكتملة',
+        'closed_lost'       => 'لم تتم',
     ];
 
     // ── Wholesale lead statuses ──
