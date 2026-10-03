@@ -409,4 +409,52 @@ class SaudiDealWorkflowTest extends TestCase
         $this->assertNotNull($deal->fresh()->commission_paid_at);
     }
 
+
+    public function test_linked_saudi_deal_cannot_close_without_agreement_value(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $owner = $this->createLead();
+        $client = $this->createLead();
+
+        $property = Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'address' => 'عقار بدون سعر',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $propertyRequest = PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $client->id,
+            'agent_id' => $this->adminUser->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'الرياض',
+            'status' => 'active',
+        ]);
+
+        $deal = Deal::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $owner->id,
+            'property_id' => $property->id,
+            'property_request_id' => $propertyRequest->id,
+            'agent_id' => $this->adminUser->id,
+            'title' => 'صفقة ناقصة السعر',
+            'stage' => 'offer_received',
+        ]);
+
+        $this->patchJson(route('deals.updateStage', $deal), [
+            'stage' => 'closed_won',
+        ])->assertStatus(422)
+          ->assertJsonValidationErrors('stage');
+
+        $this->assertSame('offer_received', $deal->fresh()->stage);
+        $this->assertSame('active', $property->fresh()->listing_status);
+        $this->assertSame('active', $propertyRequest->fresh()->status);
+    }
+
 }
