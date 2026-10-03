@@ -126,7 +126,7 @@
                         </span>
                         @if($offer->financing_type)
                             <span class="badge bg-cyan-lt">
-                                {{ AppModelsDealOffer::FINANCING_TYPES[$offer->financing_type] ?? $offer->financing_type }}
+                                {{ \App\Models\DealOffer::FINANCING_TYPES[$offer->financing_type] ?? $offer->financing_type }}
                             </span>
                         @endif
                     </div>
