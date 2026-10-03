@@ -45,7 +45,7 @@ class PropertyCriteriaRequest extends FormRequest
         });
 
         return [
-            'lead_id' => ['nullable', $leadRule],
+            'lead_id' => ['required', $leadRule],
             'agent_id' => ['nullable', Rule::exists('users', 'id')->where('tenant_id', $tenantId)],
             'transaction_type' => ['required', Rule::in(array_keys(PropertySearchRequest::TRANSACTION_TYPES))],
             'property_type' => ['required', Rule::in(CustomFieldService::getValidSlugs('property_type', $user->tenant))],
