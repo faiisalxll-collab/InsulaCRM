@@ -12,6 +12,11 @@ class DealPolicy
         return $user->isAdmin() || $user->isAgent() || $user->isDispositionAgent();
     }
 
+    public function create(User $user): bool
+    {
+        return $this->viewAny($user);
+    }
+
     public function view(User $user, Deal $deal): bool
     {
         return $this->ownsOrCanManage($user, $deal);
