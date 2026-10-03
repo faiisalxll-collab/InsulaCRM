@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Services\BusinessModeService;
 use App\Services\CustomFieldService;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PropertyRequest extends FormRequest
 {
@@ -41,7 +42,20 @@ class PropertyRequest extends FormRequest
             $rules['state'] = 'nullable|string|max:100';
             $rules['zip_code'] = 'nullable|string|max:10';
 
+            $user = $this->user();
+
             $rules += [
+                'lead_id' => [
+                    'sometimes',
+                    'required',
+                    Rule::exists('leads', 'id')->where(function ($query) use ($user) {
+                        $query->where('tenant_id', $user->tenant_id);
+
+                        if (! $user->isAdmin()) {
+                            $query->where('agent_id', $user->id);
+                        }
+                    }),
+                ],
                 'transaction_type' => 'required|in:sale,rent',
                 'district' => 'nullable|string|max:120',
                 'plan_number' => 'nullable|string|max:100',
