@@ -21,14 +21,14 @@ class ShowingModelTest extends TestCase
 
     public function test_status_label_returns_translated_string(): void
     {
-        $this->assertEquals('Scheduled', Showing::statusLabel('scheduled'));
-        $this->assertEquals('No Show', Showing::statusLabel('no_show'));
+        $this->assertEquals('مجدولة', Showing::statusLabel('scheduled'));
+        $this->assertEquals('لم يحضر', Showing::statusLabel('no_show'));
     }
 
     public function test_outcome_label_returns_translated_string(): void
     {
-        $this->assertEquals('Interested', Showing::outcomeLabel('interested'));
-        $this->assertEquals('Needs Second Showing', Showing::outcomeLabel('needs_second_showing'));
+        $this->assertEquals('مهتم', Showing::outcomeLabel('interested'));
+        $this->assertEquals('يحتاج معاينة ثانية', Showing::outcomeLabel('needs_second_showing'));
     }
 
     public function test_status_label_handles_unknown_value(): void
