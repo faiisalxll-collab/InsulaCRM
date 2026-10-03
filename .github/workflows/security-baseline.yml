@@ -43,3 +43,5 @@ jobs:
         run: php artisan test
 
 # security baseline revision: buyers-activities
+
+# security baseline revision: fail-closed-tenant-scope
