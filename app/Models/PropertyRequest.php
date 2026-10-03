@@ -6,6 +6,7 @@ use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\PropertyMatchingService;
+use Illuminate\Validation\ValidationException;
 
 class PropertyRequest extends Model
 {
@@ -34,6 +35,26 @@ class PropertyRequest extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new TenantScope);
+
+        static::saving(function (PropertyRequest $request) {
+            if ($request->lead_id !== null && ! Lead::withoutGlobalScopes()
+                ->whereKey($request->lead_id)
+                ->where('tenant_id', $request->tenant_id)
+                ->exists()) {
+                throw ValidationException::withMessages([
+                    'lead_id' => 'The selected client does not belong to this tenant.',
+                ]);
+            }
+
+            if ($request->agent_id !== null && ! User::query()
+                ->whereKey($request->agent_id)
+                ->where('tenant_id', $request->tenant_id)
+                ->exists()) {
+                throw ValidationException::withMessages([
+                    'agent_id' => 'The selected broker does not belong to this tenant.',
+                ]);
+            }
+        });
 
         static::saved(function (PropertyRequest $request) {
             $matchingFields = [
