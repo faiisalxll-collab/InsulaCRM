@@ -162,17 +162,9 @@ class DealController extends Controller
             }
         }
 
-        // Auto-create transaction checklist when entering under_contract in realestate mode
+        // Auto-create the Saudi closing checklist when entering agreement.
         if ($request->stage === 'under_contract' && \App\Services\BusinessModeService::isRealEstate()) {
-            if ($deal->checklistItems()->count() === 0) {
-                foreach (TransactionChecklist::DEFAULT_ITEMS as $item) {
-                    TransactionChecklist::create([
-                        'tenant_id' => auth()->user()->tenant_id,
-                        'deal_id' => $deal->id,
-                        ...$item,
-                    ]);
-                }
-            }
+            $this->ensureTransactionChecklist($deal);
         }
 
         return response()->json(['success' => true]);
@@ -535,6 +527,7 @@ class DealController extends Controller
                     ->update(['status' => 'rejected']);
 
                 $this->syncSaudiTransactionState($deal, 'under_contract');
+                $this->ensureTransactionChecklist($deal);
             }
         }
 
@@ -566,6 +559,21 @@ class DealController extends Controller
         $offer->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    private function ensureTransactionChecklist(Deal $deal): void
+    {
+        if ($deal->checklistItems()->exists()) {
+            return;
+        }
+
+        foreach (TransactionChecklist::DEFAULT_ITEMS as $item) {
+            TransactionChecklist::create([
+                'tenant_id' => $deal->tenant_id,
+                'deal_id' => $deal->id,
+                ...$item,
+            ]);
+        }
     }
 
     private function syncSaudiTransactionState(Deal $deal, string $stage): void
