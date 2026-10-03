@@ -30,7 +30,7 @@ class TenantApiIsolationTest extends TestCase
             'lead_id' => $leadB->id,
             'address' => 'Office B Property',
             'city' => 'Riyadh',
-            'state' => 'Riyadh',
+            'state' => 'RI',
             'zip_code' => '12345',
         ]);
 
@@ -48,7 +48,7 @@ class TenantApiIsolationTest extends TestCase
             'lead_id' => $leadA->id,
             'address' => 'Office A Property',
             'city' => 'Riyadh',
-            'state' => 'Riyadh',
+            'state' => 'RI',
             'zip_code' => '12345',
         ]);
         Property::withoutGlobalScopes()->create([
@@ -56,7 +56,7 @@ class TenantApiIsolationTest extends TestCase
             'lead_id' => $leadB->id,
             'address' => 'Office B Property',
             'city' => 'Riyadh',
-            'state' => 'Riyadh',
+            'state' => 'RI',
             'zip_code' => '12345',
         ]);
 
@@ -75,7 +75,7 @@ class TenantApiIsolationTest extends TestCase
             'lead_id' => $leadB->id,
             'address' => 'Office B Original',
             'city' => 'Riyadh',
-            'state' => 'Riyadh',
+            'state' => 'RI',
             'zip_code' => '12345',
         ]);
 
@@ -90,7 +90,7 @@ class TenantApiIsolationTest extends TestCase
             'tenant_id' => $this->officeB->id,
             'address' => 'Office B Original',
             'city' => 'Riyadh',
-            'state' => 'Riyadh',
+            'state' => 'RI',
             'zip_code' => '12345',
         ]);
     }
