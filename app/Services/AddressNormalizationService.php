@@ -184,4 +184,23 @@ class AddressNormalizationService
 
         return $data;
     }
+
+    /**
+     * Normalize Saudi property address fields without applying US street,
+     * directional, state, or ZIP conventions.
+     */
+    public static function normalizeSaudiAll(array $data): array
+    {
+        foreach (['address', 'city', 'district', 'plan_number', 'state', 'zip_code'] as $field) {
+            if (! isset($data[$field]) || ! is_string($data[$field])) {
+                continue;
+            }
+
+            $value = preg_replace('/\s{2,}/u', ' ', trim($data[$field]));
+            $data[$field] = $value === '' ? null : $value;
+        }
+
+        return $data;
+    }
+
 }
