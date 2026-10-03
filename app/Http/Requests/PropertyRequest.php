@@ -87,7 +87,6 @@ class PropertyRequest extends FormRequest
                 'listed_at' => 'nullable|date',
                 'sold_at' => 'nullable|date',
                 'sold_price' => 'nullable|numeric|min:0',
-                'mls_number' => 'nullable|string|max:50',
             ];
         } else {
             $rules += [
