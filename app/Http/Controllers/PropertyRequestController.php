@@ -97,6 +97,8 @@ class PropertyRequestController extends Controller
         $this->authorize('view', $propertyRequest);
 
         $propertyRequest->load(['lead', 'agent']);
+        $propertyRequest->loadCount(['showings', 'deals']);
+
         $matches = $propertyRequest->matches()
             ->with(['property.lead'])
             ->where('status', 'eligible')
