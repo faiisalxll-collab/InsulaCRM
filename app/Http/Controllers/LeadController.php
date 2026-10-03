@@ -287,6 +287,20 @@ class LeadController extends Controller
     public function destroy(Lead $lead)
     {
         $this->authorize('delete', $lead);
+
+        if (
+            \App\Services\BusinessModeService::isRealEstate()
+            && (
+                $lead->properties()->exists()
+                || $lead->propertyRequests()->exists()
+                || $lead->deals()->exists()
+            )
+        ) {
+            return redirect()
+                ->route('leads.show', $lead)
+                ->with('error', 'لا يمكن حذف عميل مرتبط بعقار أو طلب أو صفقة. حدّث حالته بدل الحذف للحفاظ على سجل المكتب.');
+        }
+
         $lead->delete();
         AuditLog::log('lead.deleted', $lead);
 
