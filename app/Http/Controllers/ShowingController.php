@@ -65,7 +65,8 @@ class ShowingController extends Controller
 
         $user = auth()->user();
 
-        $properties = Property::orderBy('address')
+        $properties = Property::where('listing_status', 'active')
+            ->orderBy('address')
             ->get(['id', 'address', 'city', 'district', 'state', 'property_type', 'transaction_type']);
 
         $leads = Lead::query()
