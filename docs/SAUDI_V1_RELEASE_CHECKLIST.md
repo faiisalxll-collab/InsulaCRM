@@ -44,11 +44,13 @@ Client → Property / Property Request → Match → Showing → Offer / Negotia
 
 Before pilot deployment:
 
-- [ ] Latest `saudi-real-estate` HEAD has a green full test suite.
-- [ ] Tenant isolation test step is green.
-- [ ] No skipped/ignored failure was introduced to make CI green.
-- [ ] Verify migration rollback on a disposable database snapshot.
-- [ ] Verify MySQL/MariaDB migration behavior for converted enum/string columns.
+- [x] Latest code HEAD has a green full test suite.
+- [x] Tenant isolation test step is green.
+- [x] No skipped/ignored failure was introduced to make CI green.
+- [x] Migration rollback and re-apply pass on disposable database services.
+- [x] MySQL 8.4 and MariaDB 11.4 migration behavior passes for the Saudi V1 migration set.
+
+Verified on Saudi V1 code HEAD `db97b2867175adeea5f3a6fa2b585acb0d91f91a` by GitHub Actions run `37137788570`: the tenant-isolation step, full test suite, MySQL migration gate, and MariaDB migration gate all completed successfully. Both database gates run the full migration set, roll back the five Saudi V1 migrations, re-apply them, and verify migration status.
 
 ## Pilot deployment gate
 
