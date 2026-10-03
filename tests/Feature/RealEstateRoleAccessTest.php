@@ -118,12 +118,21 @@ class RealEstateRoleAccessTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_buyers_agent_can_access_buyers(): void
+    public function test_buyers_agent_cannot_access_legacy_buyers_in_saudi_v1(): void
     {
         $this->createTenantWithAdmin(['business_mode' => 'realestate']);
         $this->actingAsRole('buyers_agent');
 
         $response = $this->get('/buyers');
+        $response->assertStatus(404);
+    }
+
+    public function test_buyers_agent_can_access_property_requests_in_saudi_v1(): void
+    {
+        $this->createTenantWithAdmin(['business_mode' => 'realestate']);
+        $this->actingAsRole('buyers_agent');
+
+        $response = $this->get('/property-requests');
         $response->assertStatus(200);
     }
 
