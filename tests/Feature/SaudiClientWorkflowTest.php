@@ -316,4 +316,67 @@ class SaudiClientWorkflowTest extends TestCase
         $this->assertSame($agentA->id, $lead->fresh()->agent_id);
     }
 
+
+    public function test_bulk_delete_keeps_linked_saudi_clients(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $linked = $this->createLead([
+            'lead_source' => 'referral',
+            'contact_type' => 'seller_lead',
+        ]);
+        $unlinked = $this->createLead([
+            'lead_source' => 'referral',
+            'contact_type' => 'buyer_lead',
+        ]);
+
+        Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $linked->id,
+            'address' => 'عقار يمنع الحذف الجماعي',
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ]);
+
+        $this->post(route('leads.bulkAction'), [
+            'ids' => [$linked->id, $unlinked->id],
+            'action' => 'delete',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('leads', [
+            'id' => $linked->id,
+            'deleted_at' => null,
+        ]);
+
+        $this->assertSoftDeleted('leads', [
+            'id' => $unlinked->id,
+        ]);
+    }
+
+    public function test_broker_cannot_bulk_reassign_clients_to_another_broker(): void
+    {
+        $this->createTenantWithAdmin($this->realEstateTenant());
+
+        $agentA = $this->createUserWithRole('agent');
+        $agentB = $this->createUserWithRole('agent');
+        $lead = $this->createLead([
+            'agent_id' => $agentA->id,
+            'lead_source' => 'referral',
+            'status' => 'new',
+            'temperature' => 'cold',
+        ]);
+
+        $this->actingAs($agentA)
+            ->post(route('leads.bulkAction'), [
+                'ids' => [$lead->id],
+                'action' => 'assign',
+                'agent_id' => $agentB->id,
+            ])
+            ->assertForbidden();
+
+        $this->assertSame($agentA->id, $lead->fresh()->agent_id);
+    }
+
 }
