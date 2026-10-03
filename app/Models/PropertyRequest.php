@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\PropertyMatchingService;
 
 class PropertyRequest extends Model
 {
@@ -33,6 +34,18 @@ class PropertyRequest extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new TenantScope);
+
+        static::saved(function (PropertyRequest $request) {
+            $matchingFields = [
+                'transaction_type','property_type','city','districts','min_price','max_price',
+                'min_area_sqm','min_bedrooms','min_street_width_m','preferred_facings',
+                'max_property_age_years','finance_required','status',
+            ];
+
+            if ($request->wasRecentlyCreated || $request->wasChanged($matchingFields)) {
+                app(PropertyMatchingService::class)->refreshForRequest($request);
+            }
+        });
     }
 
     public function tenant() { return $this->belongsTo(Tenant::class); }
