@@ -12,7 +12,9 @@ return new class extends Migration
         Schema::table('properties', function (Blueprint $table) {
             // The original schema used a US-only enum. Saudi property types and
             // tenant-defined custom types need an extensible string column.
-            $table->string('property_type', 40)->default('single_family')->change();
+            $table->string('property_type', 100)->default('single_family')->change();
+            $table->string('state')->nullable()->change();
+            $table->string('zip_code')->nullable()->change();
             $table->string('transaction_type', 20)->default('sale')->after('property_type');
             $table->string('district')->nullable()->after('city');
             $table->string('plan_number')->nullable()->after('district');
@@ -37,7 +39,7 @@ return new class extends Migration
             $table->foreignId('lead_id')->nullable()->constrained('leads')->nullOnDelete();
             $table->foreignId('agent_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('transaction_type', 20);
-            $table->string('property_type', 40);
+            $table->string('property_type', 100);
             $table->string('city');
             $table->json('districts')->nullable();
             $table->decimal('min_price', 12, 2)->nullable();
@@ -89,12 +91,17 @@ return new class extends Migration
             $table->dropColumn(['transaction_type','district','plan_number','area_sqm','facing','street_width_m','property_age_years','floors','units','furnished','finance_eligible','price_per_sqm','latitude','longitude']);
         });
 
+        DB::table('properties')->whereNull('state')->update(['state' => '']);
+        DB::table('properties')->whereNull('zip_code')->update(['zip_code' => '']);
+
         // Preserve rollback viability even if Saudi/custom slugs were stored.
         DB::table('properties')
             ->whereNotIn('property_type', ['single_family', 'multi_family', 'commercial', 'land', 'other'])
             ->update(['property_type' => 'other']);
 
         Schema::table('properties', function (Blueprint $table) {
+            $table->string('state')->nullable(false)->change();
+            $table->string('zip_code')->nullable(false)->change();
             $table->enum('property_type', ['single_family', 'multi_family', 'commercial', 'land', 'other'])
                 ->default('single_family')
                 ->change();
