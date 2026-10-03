@@ -177,4 +177,60 @@ class SaudiReportsTest extends TestCase
             ->assertSee('Conversion Funnel')
             ->assertDontSee('تقارير المكتب العقاري');
     }
+
+    public function test_broker_report_only_contains_owned_records(): void
+    {
+        $this->createTenantWithAdmin($this->realEstateTenant());
+
+        $agentA = $this->createUserWithRole('agent');
+        $agentB = $this->createUserWithRole('agent');
+
+        $ownerA = $this->createLead([
+            'agent_id' => $agentA->id,
+            'first_name' => 'مالك',
+            'last_name' => 'ألف',
+        ]);
+        $ownerB = $this->createLead([
+            'agent_id' => $agentB->id,
+            'first_name' => 'مالك',
+            'last_name' => 'باء',
+        ]);
+
+        Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $ownerA->id,
+            'address' => 'عقار وسيط ألف',
+            'city' => 'الرياض',
+            'district' => 'حي-خاص-بألف',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Property::withoutGlobalScopes()->create([
+            'tenant_id' => $this->tenant->id,
+            'lead_id' => $ownerB->id,
+            'address' => 'عقار وسيط باء',
+            'city' => 'الرياض',
+            'district' => 'حي-خاص-بباء',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($agentA)
+            ->get(route('reports.index', [
+                'agent_id' => $agentB->id,
+                'from' => now()->subDay()->toDateString(),
+                'to' => now()->addDay()->toDateString(),
+            ]))
+            ->assertOk()
+            ->assertSee('حي-خاص-بألف')
+            ->assertDontSee('حي-خاص-بباء');
+    }
+
 }
