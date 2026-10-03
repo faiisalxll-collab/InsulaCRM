@@ -248,11 +248,14 @@ class ReportController extends Controller
 
         $from = $data['from'] ?? now()->subMonths(3)->format('Y-m-d');
         $to = $data['to'] ?? now()->format('Y-m-d');
-        $agentId = $data['agent_id'] ?? null;
+        $user = auth()->user();
+        $agentId = $user->isAdmin()
+            ? ($data['agent_id'] ?? null)
+            : $user->id;
         $toEnd = $to.' 23:59:59';
 
-        if ($agentId) {
-            User::assignable(auth()->user()->tenant)->whereKey($agentId)->firstOrFail();
+        if ($user->isAdmin() && $agentId) {
+            User::assignable($user->tenant)->whereKey($agentId)->firstOrFail();
         }
 
         $clients = Lead::whereBetween('created_at', [$from, $toEnd]);
@@ -354,10 +357,12 @@ class ReportController extends Controller
                 ->get();
         }
 
-        $agents = User::assignable(auth()->user()->tenant)
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $agents = $user->isAdmin()
+            ? User::assignable($user->tenant)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+            : collect();
 
         return view('reports.saudi', compact(
             'from',
