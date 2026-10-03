@@ -275,4 +275,44 @@ class SaudiPropertyManagementTest extends TestCase
         $this->assertDatabaseHas('properties', ['id' => $property->id]);
     }
 
+
+    public function test_legacy_lead_property_endpoint_creates_multiple_saudi_properties(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+        $owner = $this->createLead();
+
+        $base = [
+            'city' => 'الرياض',
+            'property_type' => 'villa',
+            'transaction_type' => 'sale',
+            'listing_status' => 'active',
+        ];
+
+        $this->post(route('leads.property.store', $owner), [
+            ...$base,
+            'address' => 'عقار المالك الأول',
+            'district' => 'نمار',
+            'list_price' => 1500000,
+        ])->assertRedirect(route('leads.show', $owner));
+
+        $this->post(route('leads.property.store', $owner), [
+            ...$base,
+            'address' => 'عقار المالك الثاني',
+            'district' => 'العوالي',
+            'list_price' => 1700000,
+        ])->assertRedirect(route('leads.show', $owner));
+
+        $properties = Property::withoutGlobalScopes()
+            ->where('tenant_id', $this->tenant->id)
+            ->where('lead_id', $owner->id)
+            ->orderBy('id')
+            ->get();
+
+        $this->assertCount(2, $properties);
+        $this->assertSame(
+            ['عقار المالك الأول', 'عقار المالك الثاني'],
+            $properties->pluck('address')->all()
+        );
+    }
+
 }
