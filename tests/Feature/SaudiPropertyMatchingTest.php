@@ -158,4 +158,24 @@ class SaudiPropertyMatchingTest extends TestCase
             ->count());
     }
 
+
+    public function test_property_request_rejects_cross_tenant_assigned_broker(): void
+    {
+        $this->createTenantWithAdmin(['slug' => 'request-office-a', 'email' => 'request-a@test.com']);
+        $tenantA = $this->tenant;
+
+        $adminB = $this->createTenantWithAdmin(['slug' => 'request-office-b', 'email' => 'request-b@test.com']);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        PropertyRequest::withoutGlobalScopes()->create([
+            'tenant_id' => $tenantA->id,
+            'agent_id' => $adminB->id,
+            'transaction_type' => 'sale',
+            'property_type' => 'villa',
+            'city' => 'Riyadh',
+            'status' => 'active',
+        ]);
+    }
+
 }
