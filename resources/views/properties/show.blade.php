@@ -17,11 +17,13 @@
                 @if(($businessMode ?? 'wholesale') === 'realestate' && auth()->user()->can('update', $property))
                 <div class="card-actions d-flex gap-2">
                     <a href="{{ route('properties.edit', $property) }}" class="btn btn-sm btn-primary">تعديل العقار</a>
+                    @if(($property->showings_count ?? 0) === 0 && ($property->deals_count ?? 0) === 0)
                     <form method="POST" action="{{ route('properties.destroy', $property) }}" onsubmit="return confirm('حذف العقار نهائيًا؟')">
                         @csrf
                         @method('DELETE')
                         <button class="btn btn-sm btn-outline-danger">حذف</button>
                     </form>
+                    @endif
                 </div>
                 @endif
             </div>
