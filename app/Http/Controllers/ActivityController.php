@@ -243,7 +243,15 @@ class ActivityController extends Controller
     private function authorizeActivity(Activity $activity): void
     {
         $user = auth()->user();
+
+        // Route model binding can resolve a model before controller authorization.
+        // Never trust the binding boundary: enforce tenant ownership explicitly.
+        if ((int) $activity->tenant_id !== (int) $user->tenant_id) {
+            abort(404);
+        }
+
         // Agents can only edit/delete their own activities; admins can edit/delete any
+        // activity inside their own tenant.
         if ($user->isAgent() && $activity->agent_id !== $user->id) {
             abort(403);
         }
