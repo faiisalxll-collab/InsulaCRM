@@ -87,10 +87,13 @@ class PropertyController extends Controller
 
         AuditLog::log('property.created', $property);
 
-        // Auto-detect lead timezone from property zip code
-        $timezone = ZipTimezoneService::detect($property->zip_code);
-        if ($timezone && !$lead->timezone) {
-            $lead->update(['timezone' => $timezone]);
+        // ZIP-based timezone detection is a US helper. Skip it when the
+        // localized property does not carry a ZIP code.
+        if ($property->zip_code) {
+            $timezone = ZipTimezoneService::detect($property->zip_code);
+            if ($timezone && ! $lead->timezone) {
+                $lead->update(['timezone' => $timezone]);
+            }
         }
 
         if ($request->ajax()) {
