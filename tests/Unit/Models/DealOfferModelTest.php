@@ -15,7 +15,7 @@ class DealOfferModelTest extends TestCase
 
     public function test_financing_types_constant_has_all_values(): void
     {
-        $expected = ['cash', 'conventional', 'fha', 'va', 'other'];
+        $expected = ['cash', 'bank_finance', 'conventional', 'fha', 'va', 'other'];
         $this->assertEquals($expected, array_keys(DealOffer::FINANCING_TYPES));
     }
 
