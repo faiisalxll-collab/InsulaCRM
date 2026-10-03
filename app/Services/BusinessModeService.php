@@ -70,14 +70,14 @@ class BusinessModeService
     // ── Real estate lead statuses ──
 
     public const REALESTATE_LEAD_STATUSES = [
-        'new'           => 'New',
-        'inquiry'       => 'Inquiry',
-        'consultation'  => 'Consultation',
-        'active_client' => 'Active Client',
-        'nurture'       => 'Nurture',
-        'closed_won'    => 'Closed Won',
-        'closed_lost'   => 'Closed Lost',
-        'dead'          => 'Dead',
+        'new'           => 'جديد',
+        'inquiry'       => 'استفسار',
+        'consultation'  => 'تواصل ومتابعة',
+        'active_client' => 'عميل نشط',
+        'nurture'       => 'متابعة لاحقة',
+        'closed_won'    => 'تمت الصفقة',
+        'closed_lost'   => 'لم تتم',
+        'dead'          => 'غير نشط',
     ];
 
     // ── Wholesale distress markers ──
@@ -114,20 +114,23 @@ class BusinessModeService
     // ── Real estate lead sources ──
 
     public const REALESTATE_LEAD_SOURCES = [
-        'website'      => 'Website',
-        'referral'     => 'Referral',
-        'open_house'   => 'Open House',
-        'sign_call'    => 'Sign Call',
-        'ppc'          => 'PPC / Paid Ads',
-        'seo'          => 'SEO / Organic',
-        'social_media' => 'Social Media',
-        'zillow'       => 'Zillow',
-        'realtor_com'  => 'Realtor.com',
-        'mls'          => 'MLS',
-        'sphere'       => 'Sphere of Influence',
-        'past_client'  => 'Past Client',
-        'api'          => 'API / Integration',
-        'other'        => 'Other',
+        'website'         => 'موقع المكتب',
+        'referral'        => 'إحالة',
+        'office_walk_in'  => 'زيارة المكتب',
+        'phone_call'      => 'اتصال هاتفي',
+        'whatsapp'        => 'واتساب',
+        'social_media'    => 'وسائل التواصل',
+        'property_portal' => 'منصة عقارية',
+        'open_house'      => 'معاينة أو فعالية',
+        'past_client'     => 'عميل سابق',
+        'broker_referral' => 'إحالة وسيط',
+        'api'             => 'تكامل',
+        'other'           => 'أخرى',
+    ];
+
+    // Accepted for editing/importing older records, but not shown for new Saudi clients.
+    public const REALESTATE_LEGACY_LEAD_SOURCES = [
+        'sign_call', 'ppc', 'seo', 'zillow', 'realtor_com', 'mls', 'sphere',
     ];
 
     // ── Wholesale roles ──
