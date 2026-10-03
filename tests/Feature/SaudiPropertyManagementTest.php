@@ -368,4 +368,44 @@ class SaudiPropertyManagementTest extends TestCase
         $this->assertNull($property->mls_number);
     }
 
+
+    public function test_legacy_field_scout_property_intake_is_not_available_in_saudi_mode(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $this->post(route('properties.store'), [
+            'address' => 'عقار يتيم عبر المسار القديم',
+            'city' => 'الرياض',
+            'state' => 'RI',
+            'zip_code' => '14962',
+            'property_type' => 'villa',
+        ])->assertNotFound();
+
+        $this->assertDatabaseMissing('properties', [
+            'tenant_id' => $this->tenant->id,
+            'address' => 'عقار يتيم عبر المسار القديم',
+        ]);
+    }
+
+    public function test_legacy_field_scout_property_intake_remains_available_in_wholesale_mode(): void
+    {
+        $this->actingAsAdmin(['business_mode' => 'wholesale']);
+
+        $this->post(route('properties.store'), [
+            'address' => '123 Legacy St',
+            'city' => 'Miami',
+            'state' => 'FL',
+            'zip_code' => '33101',
+            'property_type' => 'single_family',
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertDatabaseHas('properties', [
+            'tenant_id' => $this->tenant->id,
+            'address' => '123 Legacy Street',
+            'city' => 'Miami',
+            'state' => 'FL',
+            'zip_code' => '33101',
+        ]);
+    }
+
 }
