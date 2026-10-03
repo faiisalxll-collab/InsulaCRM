@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Lead;
 use App\Models\Property;
 use App\Models\PropertyRequest;
+use App\Models\Tenant;
+use App\Policies\LeadPolicy;
 use Tests\TestCase;
 
 class SaudiClientWorkflowTest extends TestCase
@@ -186,4 +188,40 @@ class SaudiClientWorkflowTest extends TestCase
         $this->assertSame('zillow', $lead->fresh()->lead_source);
         $this->assertSame('active_client', $lead->fresh()->status);
     }
+
+    public function test_admin_policy_cannot_authorize_foreign_tenant_client(): void
+    {
+        $this->actingAsAdmin($this->realEstateTenant());
+
+        $foreignTenant = Tenant::create([
+            'name' => 'Foreign Office',
+            'slug' => 'foreign-office-lead-policy',
+            'email' => 'foreign-lead-policy@example.test',
+            'status' => 'active',
+            'timezone' => 'Asia/Riyadh',
+            'currency' => 'SAR',
+            'date_format' => 'Y-m-d',
+            'country' => 'SA',
+            'measurement_system' => 'metric',
+            'locale' => 'ar',
+            'distribution_method' => 'round_robin',
+            'business_mode' => 'realestate',
+        ]);
+
+        $foreignLead = Lead::withoutGlobalScopes()->create([
+            'tenant_id' => $foreignTenant->id,
+            'first_name' => 'عميل',
+            'last_name' => 'مكتب آخر',
+            'lead_source' => 'referral',
+            'status' => 'new',
+            'temperature' => 'cold',
+        ]);
+
+        $policy = app(LeadPolicy::class);
+
+        $this->assertFalse($policy->view($this->adminUser, $foreignLead));
+        $this->assertFalse($policy->update($this->adminUser, $foreignLead));
+        $this->assertFalse($policy->delete($this->adminUser, $foreignLead));
+    }
+
 }
