@@ -129,7 +129,21 @@ class CustomFieldService
      */
     public static function getValidSlugs(string $fieldType, ?Tenant $tenant = null): array
     {
-        return array_keys(self::getOptions($fieldType, $tenant));
+        if (! $tenant) {
+            $tenant = auth()->check() ? auth()->user()->tenant : null;
+        }
+
+        $slugs = array_keys(self::getOptions($fieldType, $tenant));
+
+        if (
+            $fieldType === 'lead_source'
+            && $tenant
+            && BusinessModeService::isRealEstate($tenant)
+        ) {
+            $slugs = array_merge($slugs, BusinessModeService::REALESTATE_LEGACY_LEAD_SOURCES);
+        }
+
+        return array_values(array_unique($slugs));
     }
 
     /**
