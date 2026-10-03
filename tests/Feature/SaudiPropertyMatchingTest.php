@@ -95,7 +95,7 @@ class SaudiPropertyMatchingTest extends TestCase
 
         $eligible = Property::withoutGlobalScopes()->create([
             'tenant_id' => $tenant->id, 'lead_id' => $lead->id,
-            'address' => 'Eligible', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => null,
+            'address' => 'Eligible', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => '14962',
             'property_type' => 'villa', 'transaction_type' => 'sale',
             'district' => 'Namar', 'area_sqm' => 340, 'list_price' => 1700000,
             'finance_eligible' => true, 'listing_status' => 'active',
@@ -103,7 +103,7 @@ class SaudiPropertyMatchingTest extends TestCase
 
         Property::withoutGlobalScopes()->create([
             'tenant_id' => $tenant->id, 'lead_id' => $lead->id,
-            'address' => 'Too expensive', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => null,
+            'address' => 'Too expensive', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => '14962',
             'property_type' => 'villa', 'transaction_type' => 'sale',
             'district' => 'Namar', 'area_sqm' => 340, 'list_price' => 2500000,
             'finance_eligible' => true, 'listing_status' => 'active',
@@ -143,7 +143,7 @@ class SaudiPropertyMatchingTest extends TestCase
 
         $property = Property::withoutGlobalScopes()->create([
             'tenant_id' => $tenant->id, 'lead_id' => $lead->id,
-            'address' => 'Reverse', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => null,
+            'address' => 'Reverse', 'city' => 'Riyadh', 'state' => 'Riyadh', 'zip_code' => '14962',
             'property_type' => 'villa', 'transaction_type' => 'sale',
             'district' => 'Namar', 'area_sqm' => 320, 'list_price' => 1700000,
             'listing_status' => 'active',
