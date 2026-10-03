@@ -37,9 +37,9 @@ class PropertyRequest extends FormRequest
         ];
 
         if (BusinessModeService::isRealEstate()) {
-            // Saudi addresses do not require a US-style 2-letter state or ZIP.
-            $rules['state'] = 'required|string|max:100';
-            $rules['zip_code'] = 'required|string|max:10';
+            // Saudi properties are identified primarily by city, district and location.
+            $rules['state'] = 'nullable|string|max:100';
+            $rules['zip_code'] = 'nullable|string|max:10';
 
             $rules += [
                 'transaction_type' => 'required|in:sale,rent',
