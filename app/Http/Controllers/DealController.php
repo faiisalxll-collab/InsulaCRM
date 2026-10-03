@@ -108,8 +108,14 @@ class DealController extends Controller
             'stage_changed_at' => now(),
         ];
 
-        // Auto-calculate due_diligence_end_date when moving to under_contract
-        if ($request->stage === 'under_contract' && $deal->contract_date && $deal->inspection_period_days > 0) {
+        // Due diligence is a wholesale-only legacy workflow. Saudi transactions use
+        // the explicit closing checklist instead.
+        if (
+            \App\Services\BusinessModeService::isWholesale()
+            && $request->stage === 'under_contract'
+            && $deal->contract_date
+            && $deal->inspection_period_days > 0
+        ) {
             $updateData['due_diligence_end_date'] = $deal->contract_date->copy()->addDays($deal->inspection_period_days);
         }
 
