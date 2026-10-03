@@ -6,11 +6,13 @@ use App\Http\Requests\PropertyRequest;
 use App\Models\AuditLog;
 use App\Models\Lead;
 use App\Models\Property;
+use App\Models\PropertyPhoto;
 use App\Services\AddressNormalizationService;
 use App\Services\CustomFieldService;
 use App\Services\ZipTimezoneService;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
@@ -226,13 +228,79 @@ class PropertyController extends Controller
         return redirect()->route('dashboard')->with('success', 'Property submitted successfully.');
     }
 
+    public function uploadPhotos(Request $request, Property $property)
+    {
+        $this->authorize('update', $property);
+
+        $request->validate([
+            'photos' => 'required|array|max:10',
+            'photos.*' => 'image|mimes:jpg,jpeg,png,webp|max:10240',
+            'captions' => 'nullable|array',
+            'captions.*' => 'nullable|string|max:255',
+        ]);
+
+        $nextOrder = (int) ($property->photos()->max('sort_order') ?? -1) + 1;
+        $uploaded = 0;
+
+        foreach ($request->file('photos') as $index => $file) {
+            $filename = uniqid('property_') . '.' . strtolower($file->getClientOriginalExtension());
+            $path = $file->storeAs(
+                "property-photos/{$property->tenant_id}/{$property->id}",
+                $filename,
+                'public'
+            );
+
+            PropertyPhoto::create([
+                'tenant_id' => $property->tenant_id,
+                'property_id' => $property->id,
+                'uploaded_by' => auth()->id(),
+                'filename' => $filename,
+                'original_name' => $file->getClientOriginalName(),
+                'path' => $path,
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'caption' => $request->input("captions.{$index}"),
+                'sort_order' => $nextOrder + $index,
+            ]);
+
+            $uploaded++;
+        }
+
+        AuditLog::log('property.photos_uploaded', $property, [], ['count' => $uploaded]);
+
+        return redirect()
+            ->route('properties.show', $property)
+            ->with('success', "تم رفع {$uploaded} صورة للعقار.");
+    }
+
+    public function deletePhoto(Property $property, PropertyPhoto $photo)
+    {
+        $this->authorize('update', $property);
+
+        if (
+            (int) $photo->property_id !== (int) $property->id
+            || (int) $photo->tenant_id !== (int) auth()->user()->tenant_id
+        ) {
+            abort(404);
+        }
+
+        Storage::disk('public')->delete($photo->path);
+        $photo->delete();
+
+        AuditLog::log('property.photo_deleted', $property);
+
+        return redirect()
+            ->route('properties.show', $property)
+            ->with('success', 'تم حذف صورة العقار.');
+    }
+
     /**
      * Show a property detail page.
      */
     public function show(Property $property)
     {
         $this->authorize('view', $property);
-        $property->load('lead');
+        $property->load(['lead', 'photos.uploader']);
         $property->loadCount([
             'matches as eligible_matches_count' => fn ($query) => $query->where('status', 'eligible'),
         ]);
