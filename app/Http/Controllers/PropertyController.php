@@ -97,7 +97,9 @@ class PropertyController extends Controller
         $this->authorize('create', Property::class);
 
         $data = $request->validated();
-        $data = AddressNormalizationService::normalizeAll($data);
+        $data = \App\Services\BusinessModeService::isRealEstate()
+            ? AddressNormalizationService::normalizeSaudiAll($data)
+            : AddressNormalizationService::normalizeAll($data);
         $data['tenant_id'] = auth()->user()->tenant_id;
 
         $lead = Lead::query()->findOrFail($data['lead_id']);
@@ -129,7 +131,9 @@ class PropertyController extends Controller
         $this->authorize('update', $property);
 
         $data = $request->validated();
-        $data = AddressNormalizationService::normalizeAll($data);
+        $data = \App\Services\BusinessModeService::isRealEstate()
+            ? AddressNormalizationService::normalizeSaudiAll($data)
+            : AddressNormalizationService::normalizeAll($data);
 
         $lead = Lead::query()->findOrFail($data['lead_id'] ?? $property->lead_id);
         $this->authorize('update', $lead);
@@ -176,7 +180,9 @@ class PropertyController extends Controller
         $this->authorize('create', Property::class);
 
         $data = $request->validated();
-        $data = AddressNormalizationService::normalizeAll($data);
+        $data = \App\Services\BusinessModeService::isRealEstate()
+            ? AddressNormalizationService::normalizeSaudiAll($data)
+            : AddressNormalizationService::normalizeAll($data);
         $data['tenant_id'] = auth()->user()->tenant_id;
         $data['lead_id'] = $lead->id;
 
