@@ -1,11 +1,17 @@
 @extends('layouts.app')
 
-@section('title', (($businessMode ?? 'wholesale') === 'realestate' ? __('Transaction:') : __('Deal:')) . ' ' . ($deal->lead->full_name ?? $deal->title))
-@section('page-title', ($businessMode ?? 'wholesale') === 'realestate' ? __('Transaction Details') : __('Deal Details'))
+@php
+    $dealDisplayName = ($businessMode ?? 'wholesale') === 'realestate'
+        ? ($deal->propertyRequest?->lead?->full_name ?? $deal->title)
+        : ($deal->lead?->full_name ?? $deal->title);
+@endphp
+
+@section('title', (($businessMode ?? 'wholesale') === 'realestate' ? 'صفقة: ' : __('Deal:').' ') . $dealDisplayName)
+@section('page-title', ($businessMode ?? 'wholesale') === 'realestate' ? 'تفاصيل الصفقة' : __('Deal Details'))
 
 @section('breadcrumbs')
-<li class="breadcrumb-item"><a href="{{ route('pipeline') }}">{{ ($businessMode ?? 'wholesale') === 'realestate' ? __('Transactions') : __('Pipeline') }}</a></li>
-<li class="breadcrumb-item active" aria-current="page">{{ $deal->lead->full_name ?? $deal->title }}</li>
+<li class="breadcrumb-item"><a href="{{ route('pipeline') }}">{{ ($businessMode ?? 'wholesale') === 'realestate' ? 'الصفقات' : __('Pipeline') }}</a></li>
+<li class="breadcrumb-item active" aria-current="page">{{ $dealDisplayName }}</li>
 @endsection
 
 @section('content')
