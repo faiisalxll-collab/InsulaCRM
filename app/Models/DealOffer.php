@@ -25,10 +25,12 @@ class DealOffer extends Model
     ];
 
     public const FINANCING_TYPES = [
-        ...self::SAUDI_FINANCING_TYPES,
+        'cash' => 'نقدي',
+        'bank_finance' => 'تمويل بنكي',
         'conventional' => 'Conventional',
         'fha' => 'FHA',
         'va' => 'VA',
+        'other' => 'Other',
     ];
 
     protected $fillable = [
