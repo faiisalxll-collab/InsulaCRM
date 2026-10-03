@@ -88,4 +88,24 @@ class AddressNormalizationServiceTest extends TestCase
         $this->assertEquals('', $normalized['address']);
         $this->assertNull($normalized['city']);
     }
+
+    public function test_saudi_normalization_preserves_local_address_tokens(): void
+    {
+        $normalized = AddressNormalizationService::normalizeSaudiAll([
+            'address' => '  N   Rd   10  ',
+            'city' => '  الرياض  ',
+            'district' => '  ضاحية   نمار  ',
+            'plan_number' => '  2030 A  ',
+            'state' => '  Riyadh  ',
+            'zip_code' => '  14962  ',
+        ]);
+
+        $this->assertSame('N Rd 10', $normalized['address']);
+        $this->assertSame('الرياض', $normalized['city']);
+        $this->assertSame('ضاحية نمار', $normalized['district']);
+        $this->assertSame('2030 A', $normalized['plan_number']);
+        $this->assertSame('Riyadh', $normalized['state']);
+        $this->assertSame('14962', $normalized['zip_code']);
+    }
+
 }
